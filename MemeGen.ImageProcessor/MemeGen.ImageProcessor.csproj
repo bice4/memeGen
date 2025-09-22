@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-MemeGen.ImageProcessor-123a6264-8f0e-4310-8673-5178ac966fef</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.9"/>
+        <PackageReference Include="Aspire.RabbitMQ.Client" Version="*"/>
+        <PackageReference Include="Aspire.Azure.Storage.Blobs" Version="*" />
+        <PackageReference Include="SixLabors.Fonts" Version="2.0.3" />
+        <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.3" />
+
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\MemeGen.Common\MemeGen.Common.csproj" />
+      <ProjectReference Include="..\MemeGen.Contracts\MemeGen.Contracts.csproj" />
+      <ProjectReference Include="..\MemeGen.Domain\MemeGen.Domain.csproj" />
+      <ProjectReference Include="..\MemeGen.ServiceDefaults\MemeGen.ServiceDefaults.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="data\Roboto-Regular.ttf">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+</Project>

@@ -1,0 +1,116 @@
+﻿using Azure.Storage.Blobs;
+using MemeGen.ApiService.Persistent;
+using MemeGen.ApiService.Persistent.MongoDb;
+using MemeGen.ApiService.Translators;
+using MemeGen.Common.Constants;
+using MemeGen.Common.Exceptions;
+using MemeGen.Contracts.Http.v1.Requests;
+using MemeGen.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using MongoDB.Bson;
+using InvalidDataException = MemeGen.Common.Exceptions.InvalidDataException;
+
+namespace MemeGen.ApiService.Services;
+
+public interface ITemplateService
+{
+    Task CreateAsync(CreateTemplateRequest createTemplateRequest, CancellationToken cancellationToken);
+
+    Task<List<Template>> GetAllAsync(CancellationToken cancellationToken);
+
+    Task<List<Template>> GetAllByPersonIdAsync(int personId, CancellationToken cancellationToken);
+
+    Task DeleteByIdAsync(ObjectId id, CancellationToken cancellationToken);
+
+    Task<Template> GetByIdAsync(ObjectId id, CancellationToken cancellationToken);
+
+    Task<List<string>> GetAllImageContentAsync(CancellationToken cancellationToken);
+}
+
+public class TemplateService(
+    ILogger<TemplateService> logger,
+    ITemplateRepository repository,
+    AppDbContext appDbContext,
+    IImageGenerationRepository imageGenerationRepository,
+    BlobServiceClient blobServiceClient)
+    : ITemplateService
+{
+    public async Task CreateAsync(CreateTemplateRequest createTemplateRequest,
+        CancellationToken cancellationToken)
+    {
+        var personExists =
+            await appDbContext.Persons.AnyAsync(p => p.Id == createTemplateRequest.PersonId,
+                cancellationToken: cancellationToken);
+        if (!personExists)
+            throw new NotFoundException("Person", createTemplateRequest.PersonId);
+
+        var photo = await appDbContext.Photos.FirstOrDefaultAsync(x => x.Id == createTemplateRequest.PhotoId,
+            cancellationToken);
+        if (photo == null)
+            throw new NotFoundException("Photo", createTemplateRequest.PhotoId);
+
+        if (createTemplateRequest.Quotes.Count == 0)
+            throw new InvalidDataException("Quotes cannot be empty");
+
+        var template = createTemplateRequest.ToDomain(photo.BlobFileName);
+
+        await repository.CreateAsync(template, cancellationToken);
+
+        logger.LogInformation("Template {Id} has been created.", template.Id);
+    }
+
+    public Task<List<Template>> GetAllAsync(CancellationToken cancellationToken)
+        => repository.GetAllAsync(cancellationToken);
+
+    public Task<List<Template>> GetAllByPersonIdAsync(int personId, CancellationToken cancellationToken)
+        => repository.GetByPersonIdAsync(personId, cancellationToken);
+
+    public async Task DeleteByIdAsync(ObjectId id, CancellationToken cancellationToken)
+    {
+        await repository.DeleteAsync(id, cancellationToken);
+        logger.LogInformation("Template {Id} has been deleted.", id);
+    }
+
+    public Task<Template> GetByIdAsync(ObjectId id, CancellationToken cancellationToken)
+        => repository.GetByIdAsync(id, cancellationToken);
+
+    public async Task<List<string>> GetAllImageContentAsync(CancellationToken cancellationToken)
+    {
+        var allResults = await imageGenerationRepository.GetAllAsync(cancellationToken);
+        var notNullResults = allResults.Where(x => x != null).ToList();
+
+        var base64Images = new List<string>(notNullResults.Count);
+        var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
+
+        foreach (var result in notNullResults)
+        {
+            var base64Image = await GetImageContentBase64Async(result!, blobContainerClient, cancellationToken);
+            if (base64Image != null)
+                base64Images.Add(base64Image);
+        }
+
+        return base64Images;
+    }
+
+    private async Task<string?> GetImageContentBase64Async(string blobFileName, BlobContainerClient client,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var blob = client.GetBlobClient(blobFileName);
+            
+            var blobContent = await blob.DownloadContentAsync(cancellationToken);
+            if (!blobContent.HasValue)
+                return null!;
+
+            // Convert to Base64
+            var contentBinary = blobContent.Value.Content;
+            return Convert.ToBase64String(contentBinary);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Failed to get image {BlobFileName} content from Blob storage.", blobFileName);
+            return null;
+        }
+    }
+}
