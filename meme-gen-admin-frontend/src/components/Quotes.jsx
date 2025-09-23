@@ -7,6 +7,8 @@ import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { ContextMenu } from 'primereact/contextmenu';
 import { Skeleton } from 'primereact/skeleton';
+import { FileUpload } from 'primereact/fileupload';
+import { Tag } from 'primereact/tag';
 
 export default function Quotes({ selectedPerson, onCallToast, onCallQuotesCount }) {
 
@@ -14,6 +16,7 @@ export default function Quotes({ selectedPerson, onCallToast, onCallQuotesCount 
     const [quotes, setQuotes] = useState([]);
     const [newQuoteContent, setNewQuoteContent] = useState('');
     const [selectedQuote, setSelectedQuote] = useState();
+    const [textFile, setTextFile] = useState();
     const cm = useRef(null);
 
     const menuModel = [
@@ -56,6 +59,36 @@ export default function Quotes({ selectedPerson, onCallToast, onCallQuotesCount 
             });
     }
 
+    const uploadTextFile = async () => {
+        if (textFile === undefined) return;
+
+        const formData = new FormData();
+        formData.append("file", textFile);
+        formData.append("personId", selectedPerson.id);
+
+        const response = await fetch(`${apiUrl}/file`, {
+            method: "POST",
+            body: formData
+        });
+
+        if (response.ok) {
+            setTextFile();
+            onCallToast(0, 'Quotes from file uploaded');
+            getQuotes();
+
+        } else {
+            console.error("Error:", response.status);
+            onCallToast(1, 'Failed to upload quotes from file');
+            setTextFile();
+        }
+    }
+
+    const handleSelect = (e) => {
+        const file = e.files[0];
+        if (!file) return;
+        setTextFile(file);
+    };
+
     const addNewQuote = async () => {
         const response = await fetch(apiUrl, {
             method: "POST",
@@ -75,6 +108,58 @@ export default function Quotes({ selectedPerson, onCallToast, onCallQuotesCount 
             onCallToast(1, 'Failed to add quote');
         }
     }
+
+    const emptyTemplate = () => {
+        return (
+            <div className="flex align-items-center ">
+                <i className="pi pi-align-center mt-3 p-5" style={{ fontSize: '5em', borderRadius: '50%', backgroundColor: 'var(--surface-b)', color: 'var(--surface-d)' }}></i>
+                <span style={{ fontSize: '1.2em', color: 'var(--text-color-secondary)' }} className="my-5 ml-4">
+                    Drag and Drop Text file Here
+                </span>
+            </div>
+        );
+    };
+
+    const chooseOptions = { icon: 'pi pi-fw pi-images', iconOnly: true, className: 'custom-choose-btn p-button-rounded p-button-outlined' };
+    const cancelOptions = { icon: 'pi pi-fw pi-times', iconOnly: true, className: 'custom-cancel-btn p-button-danger p-button-rounded p-button-outlined' };
+
+    const itemTemplate = (file, props) => {
+        return (
+            <div className="flex align-items-center flex-wrap">
+                <div className="flex " style={{ width: '80%' }}>
+                    <span className="flex flex-column text-left ml-3">
+                        {file.name}
+                        <small>{new Date().toLocaleDateString()}</small>
+                    </span>
+                </div>
+                <Tag value={props.formatSize} severity="warning" className="px-3 py-2" />
+            </div>
+        );
+    };
+
+
+    function isTextFileInvalid() {
+        if (textFile === undefined) return true;
+        return false;
+    }
+
+    const headerTemplate = (options) => {
+        const { className, chooseButton, cancelButton } = options;
+
+        return (
+            <div className={className} style={{ backgroundColor: 'transparent', display: 'flex', alignItems: 'center', width: '100%' }}>
+                {chooseButton}
+                {cancelButton}
+                <div className='flex w-10 flex justify-content-end'>
+                    <Button className='ml-4' icon='pi pi-upload' aria-label="Filter" onClick={uploadTextFile} disabled={isTextFileInvalid()} />
+                </div>
+            </div>
+        );
+    };
+
+    const onTemplateClear = () => {
+        setTextFile();
+    };
 
     useEffect(() => {
         if (quotes.length > 0) {
@@ -98,7 +183,6 @@ export default function Quotes({ selectedPerson, onCallToast, onCallQuotesCount 
             <Column field="quote" header="Quote" style={{ width: '25%' }} body={<Skeleton />}></Column>
         </DataTable>)
     }
-
 
     function renderQuotes() {
         if (isLoading) {
@@ -126,7 +210,7 @@ export default function Quotes({ selectedPerson, onCallToast, onCallQuotesCount 
                             </DataTable></>)}
                 </div>
                 <div className='col-6'>
-                    <>
+                    <div>
                         <div className='text-2xl'>
                             Add new quote
                         </div>
@@ -134,7 +218,19 @@ export default function Quotes({ selectedPerson, onCallToast, onCallQuotesCount 
                             <InputText className='w-8' value={newQuoteContent} onChange={(e) => setNewQuoteContent(e.target.value)} />
                             <Button className='ml-4' icon='pi pi-upload' aria-label="Filter" onClick={addNewQuote} disabled={newQuoteContent === ''} />
                         </div>
-                    </>
+                        <div className='flex mt-4'>
+                            <div className='text-2xl w-12'>
+                                Upload text file with quotes
+                                <div className='flex mt-4'>
+                                    <FileUpload name="demo[]" url="/api/upload" accept="text/*" maxFileSize={1000000}
+                                        className='w-12'
+                                        headerTemplate={headerTemplate} itemTemplate={itemTemplate} onClear={onTemplateClear} emptyTemplate={emptyTemplate}
+                                        chooseOptions={chooseOptions} cancelOptions={cancelOptions} onSelect={handleSelect} />
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
                 </div>
             </div>
         ))

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using MemeGen.Common.Constants;
 using MemeGen.Contracts.Messaging.V1.Requests;
 using MemeGen.Domain.Entities;
@@ -21,7 +22,8 @@ public class ImageProcessor(
 {
     public async Task ProcessImageAsync(ImageProcessingRequest request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Processing image request: {@Request}", request);
+        logger.LogInformation("Processing image request: {CorrelationId}, templateId: {TemplateId}, quote: {Quote}",
+            request.CorrelationId, request.RandomTemplateId, request.RandomQuote);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -49,32 +51,37 @@ public class ImageProcessor(
             return;
         }
 
-        var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
-        var blob = blobContainerClient.GetBlobClient(template.PhotoBlobFileName);
-
-        var blobContent = await blob.DownloadContentAsync(cancellationToken);
-        if (!blobContent.HasValue)
-        {
-            stopwatch.Stop();
-            await FailImageProcessing(imageGeneration, "Image not found at blob", cancellationToken);
-            return;
-        }
-
-        var contentBinary = blobContent.Value.Content;
         var tempFileName = Path.GetTempFileName();
+
         try
         {
+            var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
+            var blob = blobContainerClient.GetBlobClient(template.PhotoBlobFileName);
+
+            var blobContent = await blob.DownloadContentAsync(cancellationToken);
+            if (!blobContent.HasValue)
+            {
+                stopwatch.Stop();
+                await FailImageProcessing(imageGeneration, "Image not found at blob", cancellationToken);
+                return;
+            }
+
+            var contentBinary = blobContent.Value.Content;
+
             await File.WriteAllBytesAsync(tempFileName, contentBinary, cancellationToken);
 
-            await ImageTextDrawer.DrawTextOnImage(request.RandomQuote, tempFileName);
+            await ImageTextDrawer.DrawTextOnImage(request.RandomQuote, tempFileName, request.ImageProcessingConfig);
 
             // processing
             var blobName = request.CorrelationId;
             var blobClient = blobContainerClient.GetBlobClient(blobName);
-            await blobClient.UploadAsync(new BinaryData(
-                    await File.ReadAllBytesAsync(tempFileName, cancellationToken)),
-                cancellationToken);
-
+           
+            await blobClient.UploadAsync(tempFileName, cancellationToken);
+            await blobClient.SetHttpHeadersAsync(new BlobHttpHeaders
+            {
+                ContentType = "image/jpeg"
+            }, cancellationToken: cancellationToken);
+            
             stopwatch.Stop();
             await CompleteImageProcessing(imageGeneration, blobName, $"Elapsed: {stopwatch.ElapsedMilliseconds} ms",
                 cancellationToken);
@@ -83,7 +90,7 @@ public class ImageProcessor(
         {
             stopwatch.Stop();
             logger.LogError(e, "Error drawing on image");
-            await FailImageProcessing(imageGeneration, "Drawing processing error", cancellationToken);
+            await FailImageProcessing(imageGeneration, "Image processing error", cancellationToken);
             if (File.Exists(tempFileName))
                 File.Delete(tempFileName);
         }

@@ -6,7 +6,7 @@ namespace MemeGen.ApiService.Persistent.MongoDb;
 
 public interface IImageGenerationRepository
 {
-    Task<List<string?>> GetAllAsync(CancellationToken cancellationToken);
+    Task<List<string?>> GetByPersonIdAsync(int personId, CancellationToken cancellationToken);
 }
 
 public class ImageGenerationRepository(IMongoClient client) : IImageGenerationRepository
@@ -17,10 +17,10 @@ public class ImageGenerationRepository(IMongoClient client) : IImageGenerationRe
         return database.GetCollection<ImageGeneration>(MongoDbConstants.ImageGenerationCollectionName);
     }
 
-    public async Task<List<string?>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<List<string?>> GetByPersonIdAsync(int personId, CancellationToken cancellationToken)
     {
         var collection = GetCollection();
-        var all = await collection.Find(x => x.Status == ImageGenerationStatus.Completed)
+        var all = await collection.Find(x => x.Status == ImageGenerationStatus.Completed && x.PersonId == personId)
             .ToListAsync(cancellationToken: cancellationToken);
         return all.Select(x => x.BlobFileName).ToList();
     }

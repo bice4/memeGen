@@ -24,7 +24,7 @@ public interface ITemplateService
 
     Task<Template> GetByIdAsync(ObjectId id, CancellationToken cancellationToken);
 
-    Task<List<string>> GetAllImageContentAsync(CancellationToken cancellationToken);
+    Task<List<string>> GetAllImageContentAsync(int personId, CancellationToken cancellationToken);
 }
 
 public class TemplateService(
@@ -74,9 +74,9 @@ public class TemplateService(
     public Task<Template> GetByIdAsync(ObjectId id, CancellationToken cancellationToken)
         => repository.GetByIdAsync(id, cancellationToken);
 
-    public async Task<List<string>> GetAllImageContentAsync(CancellationToken cancellationToken)
+    public async Task<List<string>> GetAllImageContentAsync(int personId, CancellationToken cancellationToken)
     {
-        var allResults = await imageGenerationRepository.GetAllAsync(cancellationToken);
+        var allResults = await imageGenerationRepository.GetByPersonIdAsync(personId, cancellationToken);
         var notNullResults = allResults.Where(x => x != null).ToList();
 
         var base64Images = new List<string>(notNullResults.Count);

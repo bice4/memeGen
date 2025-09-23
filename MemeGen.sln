@@ -18,6 +18,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemeGen.ImageProcessor", "M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemeGen.Lcm", "MemeGen.Lcm\MemeGen.Lcm.csproj", "{1FA11F1C-506E-4A03-B120-132D3F5EA791}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemeGen.Playground", "MemeGen.Playground\MemeGen.Playground.csproj", "{D07F4E77-7508-4830-A6E4-69E34E8EA18C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemeGen.ConfigurationService", "MemeGen.ConfigurationService\MemeGen.ConfigurationService.csproj", "{208A6381-F07D-4A58-806B-E08CA9DBD866}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,6 +64,14 @@ Global
 		{1FA11F1C-506E-4A03-B120-132D3F5EA791}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1FA11F1C-506E-4A03-B120-132D3F5EA791}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1FA11F1C-506E-4A03-B120-132D3F5EA791}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D07F4E77-7508-4830-A6E4-69E34E8EA18C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D07F4E77-7508-4830-A6E4-69E34E8EA18C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D07F4E77-7508-4830-A6E4-69E34E8EA18C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D07F4E77-7508-4830-A6E4-69E34E8EA18C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{208A6381-F07D-4A58-806B-E08CA9DBD866}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{208A6381-F07D-4A58-806B-E08CA9DBD866}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{208A6381-F07D-4A58-806B-E08CA9DBD866}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{208A6381-F07D-4A58-806B-E08CA9DBD866}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection

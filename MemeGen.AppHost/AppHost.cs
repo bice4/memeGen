@@ -26,17 +26,21 @@ var mongo = builder.AddMongoDB("mongodb")
 
 var mongodb = mongo.AddDatabase("memeGenTemplates");
 
-var azureBlobStorage = builder.AddAzureStorage("memeGenAzureStorage")
-    .RunAsEmulator(emulator => emulator.WithDataVolume())
-    .AddBlobs("mainphotocontainer");
+var azureBlobStorage = builder.AddAzureStorage("azureblobstorage")
+    .RunAsEmulator(emulator => emulator.WithDataVolume());
+
+ var azureBlobPhotoContainer = azureBlobStorage.AddBlobs("photocontainer");
+ var azureTables = azureBlobStorage.AddTables("configurations");
 
 var adminApiService = builder.AddProject<Projects.MemeGen_AdminApiService>("adminApiService")
-    .WithReference(azureBlobStorage)
+    .WithReference(azureBlobPhotoContainer)
+    .WithReference(azureTables)
     .WithReference(sqlMemeGenDb)
     .WithReference(mongodb)
-    .WaitFor(azureBlobStorage)
+    .WaitFor(azureBlobPhotoContainer)
     .WaitFor(sqlMemeGenDb)
     .WaitFor(mongodb)
+    .WaitFor(azureTables)
     .WithHttpHealthCheck("/health");
 
 builder.AddViteApp(name: "admin-frontend", workingDirectory: "../meme-gen-admin-frontend")
@@ -48,11 +52,13 @@ var clientApiService = builder.AddProject<Projects.MemeGen_ClientApiService>("cl
     .WithReference(mongodb)
     .WithReference(imageRedisCache)
     .WithReference(rabbitmq)
-    .WithReference(azureBlobStorage)
+    .WithReference(azureBlobPhotoContainer)
+    .WithReference(azureTables)
     .WaitFor(azureBlobStorage)
     .WaitFor(mongodb)
     .WaitFor(imageRedisCache)
     .WaitFor(rabbitmq)
+    .WaitFor(azureTables)
     .WithHttpHealthCheck("/health");
 
 builder.AddViteApp(name: "client-frontend", workingDirectory: "../meme-gen-client-frontend")
@@ -61,7 +67,7 @@ builder.AddViteApp(name: "client-frontend", workingDirectory: "../meme-gen-clien
     .WithNpmPackageInstallation();
 
 builder.AddProject<Projects.MemeGen_ImageProcessor>("imageProcessorService")
-    .WithReference(azureBlobStorage)
+    .WithReference(azureBlobPhotoContainer)
     .WithReference(mongodb)
     .WithReference(rabbitmq)
     .WaitFor(azureBlobStorage)
@@ -69,7 +75,7 @@ builder.AddProject<Projects.MemeGen_ImageProcessor>("imageProcessorService")
     .WaitFor(rabbitmq);
 
 builder.AddProject<Projects.MemeGen_Lcm>("lcmWorker")
-    .WithReference(azureBlobStorage)
+    .WithReference(azureBlobPhotoContainer)
     .WithReference(mongodb)
     .WithReference(imageRedisCache)
     .WaitFor(azureBlobStorage)

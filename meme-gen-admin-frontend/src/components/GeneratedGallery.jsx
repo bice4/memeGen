@@ -1,18 +1,10 @@
 
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { useState, useEffect, useRef } from "react";
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { Card } from 'primereact/card';
-import { Button } from 'primereact/button';
-import { InputText } from 'primereact/inputtext';
-import { ContextMenu } from 'primereact/contextmenu';
-import { Skeleton } from 'primereact/skeleton';
-import { Divider } from 'primereact/divider';
+import { useState, useEffect } from "react";
 import { Galleria } from 'primereact/galleria';
 
 
-export default function GeneratedGallery({ onCallToast }) {
+export default function GeneratedGallery({ selectedPerson, onCallToast }) {
 
     const [isLoading, setIsLoading] = useState(true);
     const [images, setImages] = useState([]);
@@ -25,7 +17,7 @@ export default function GeneratedGallery({ onCallToast }) {
     };
 
     const getGeneratedImages = async () => {
-        fetch(`${apiUrl}/content`)
+        fetch(`${apiUrl}/content/${selectedPerson.id}`)
             .then(response => response.json())
             .then(json => {
                 setIsLoading(false);
@@ -43,7 +35,7 @@ export default function GeneratedGallery({ onCallToast }) {
     useEffect(() => {
         getGeneratedImages();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [selectedPerson]);
 
 
     return (

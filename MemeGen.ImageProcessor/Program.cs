@@ -12,7 +12,7 @@ builder.Services.AddSingleton<IImageProcessor, ImageProcessor>();
 builder.AddServiceDefaults();
 
 builder.AddRabbitMQClient(connectionName: "rabbitmq");
-builder.AddAzureBlobServiceClient("mainPhotoContainer");
+builder.AddAzureBlobServiceClient("photocontainer");
 builder.AddMongoDBClient(connectionName: "memeGenTemplates");
 
 ImageTextDrawer.Init();

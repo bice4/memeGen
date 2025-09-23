@@ -6,9 +6,9 @@ namespace MemeGen.ClientApiService.Services;
 
 public interface IImageCache
 {
-    Task AddImageToCacheAsync(string templateId, string quote, string blobName, CancellationToken cancellationToken);
+    Task AddImageToCacheAsync(string[] keys, string blobName, CancellationToken cancellationToken);
 
-    Task<string?> GetImageFromCacheAsync(string templateId, string quote, CancellationToken cancellationToken);
+    Task<string?> GetImageFromCacheAsync(string[] keys, CancellationToken cancellationToken);
 
     RandomTemplateAndQuote GetRandomTemplateAndQuote(List<Template> personTemplates);
 }
@@ -21,24 +21,24 @@ public class ImageCache(
     private readonly TimeSpan _cacheExpirationTime = TimeSpan.FromHours(1);
     private readonly Random _random = new();
     private string? _lastQuote;
+    
+    private static string GetKeyByListOfParams(string[] keys) => string.Join("_", keys);
 
-
-    public async Task AddImageToCacheAsync(string templateId, string quote, string blobName,
+    public async Task AddImageToCacheAsync(string[] keys, string blobName,
         CancellationToken cancellationToken)
     {
         var redis = mux.GetDatabase();
-        await redis.StringSetAsync($"{templateId}_{quote}", blobName, _cacheExpirationTime);
+        await redis.StringSetAsync(GetKeyByListOfParams(keys), blobName, _cacheExpirationTime);
 
-        logger.LogInformation("Image added to cache with quote {Quote} and {TemplateId}.", quote, templateId);
+        logger.LogInformation("Image added to cache with quote {Quote} and {TemplateId}.", keys[0], keys[1]);
     }
 
-    public async Task<string?> GetImageFromCacheAsync(string templateId, string quote,
+    public async Task<string?> GetImageFromCacheAsync(string[] keys,
         CancellationToken cancellationToken)
     {
         var redis = mux.GetDatabase();
 
-        var redisValue = await redis.StringGetAsync($"{templateId}_{quote}");
-
+        var redisValue = await redis.StringGetAsync(GetKeyByListOfParams(keys));
         if (redisValue.IsNullOrEmpty) return null!;
 
         return redisValue;

@@ -52,3 +52,6 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+.idea/
+.idea/.idea.MemeGen/.idea/dataSources.xml

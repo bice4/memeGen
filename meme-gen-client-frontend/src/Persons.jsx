@@ -7,15 +7,15 @@ export default function Persons({ persons, handleClick }) {
     return (
 
         <div>
-            {persons.map((item) => (
-                <div style={{
-                    display: "flex",
-                    gap: "60px",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    height: "100vh",
-                    width: "100vw - 18px",
-                }}>
+            <div style={{
+                display: "flex",
+                gap: "60px",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100vh",
+                width: "100vw - 18px",
+            }}>
+                {persons.map((item) => (
                     <motion.div
                         key={item.id}
                         style={{
@@ -40,9 +40,11 @@ export default function Persons({ persons, handleClick }) {
                         onClick={() => handleClick(item.id)}
                     >
                         {item.name}
-                    </motion.div>  </div>
-            ))
-            }</div>
+                    </motion.div>
+                ))
+                }
+            </div>
+        </div>
 
     )
 }

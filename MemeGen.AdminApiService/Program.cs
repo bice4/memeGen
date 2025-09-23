@@ -2,6 +2,7 @@ using MemeGen.ApiService.Persistent;
 using MemeGen.ApiService.Persistent.MongoDb;
 using MemeGen.ApiService.Services;
 using MemeGen.Common.Services;
+using MemeGen.ConfigurationService;
 using MemeGen.ServiceDefaults;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +12,9 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
-builder.AddAzureBlobServiceClient("mainPhotoContainer");
+builder.AddAzureBlobServiceClient("photocontainer");
+
+builder.AddConfigurationService();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("MemeGen")));

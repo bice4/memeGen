@@ -2,6 +2,7 @@
 using MemeGen.Common.Exceptions;
 using MemeGen.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using InvalidDataException = MemeGen.Common.Exceptions.InvalidDataException;
 
 namespace MemeGen.ApiService.Services;
 
@@ -16,6 +17,8 @@ public interface IQuoteService
     Task<List<QuoteItem>> GetByPersonIdAsync(int personId, CancellationToken cancellationToken);
 
     Task<List<QuoteItem>> GetAllAsync(CancellationToken cancellationToken);
+
+    Task ImportFromFileForPersonAsync(Stream stream, int personId, CancellationToken cancellationToken);
 }
 
 public class QuoteService(ILogger<QuoteService> logger, AppDbContext appDbContext) : IQuoteService
@@ -67,4 +70,27 @@ public class QuoteService(ILogger<QuoteService> logger, AppDbContext appDbContex
 
     public Task<List<QuoteItem>> GetAllAsync(CancellationToken cancellationToken) =>
         appDbContext.Quotes.ToListAsync(cancellationToken);
+
+    public async Task ImportFromFileForPersonAsync(Stream stream, int personId, CancellationToken cancellationToken)
+    {
+        using var reader = new StreamReader(stream);
+        var quotes = new List<QuoteItem>();
+        while (!reader.EndOfStream)
+        {
+            var line = await reader.ReadLineAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(line)) continue;
+
+            if (quotes.Any(x => x.Quote == line))
+                continue;
+
+            var quote = new QuoteItem(line, personId);
+            quotes.Add(quote);
+        }
+
+        if (quotes.Count == 0)
+            throw new InvalidDataException("File is empty");
+
+        await appDbContext.Quotes.AddRangeAsync(quotes, cancellationToken);
+        await appDbContext.SaveChangesAsync(cancellationToken);
+    }
 }

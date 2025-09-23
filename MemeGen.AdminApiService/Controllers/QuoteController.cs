@@ -89,6 +89,33 @@ public class QuoteController(
         }
     }
 
+    [HttpPost("file")]
+    public async Task<IActionResult> BulkPost([FromForm] IFormFile file, [FromForm] int personId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (file?.Length == 0)
+                return BadRequest("Files is empty");
+
+            if (personId <= 0)
+                return BadRequest("PersonId must be positive");
+            
+            await using var stream = file!.OpenReadStream();
+            await quoteService.ImportFromFileForPersonAsync(stream, personId, cancellationToken);
+
+            return Ok();
+        }
+        catch (DomainException e)
+        {
+            return responseBuilder.HandleDomainException(e);
+        }
+        catch (Exception e)
+        {
+            return responseBuilder.HandleException(e);
+        }
+    }
+
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {

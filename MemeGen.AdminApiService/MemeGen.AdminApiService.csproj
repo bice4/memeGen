@@ -9,14 +9,17 @@
 
     <ItemGroup>
         <ProjectReference Include="..\MemeGen.Common\MemeGen.Common.csproj" />
+        <ProjectReference Include="..\MemeGen.ConfigurationService\MemeGen.ConfigurationService.csproj" />
         <ProjectReference Include="..\MemeGen.Contracts\MemeGen.Contracts.csproj" />
         <ProjectReference Include="..\MemeGen.Domain\MemeGen.Domain.csproj" />
         <ProjectReference Include="..\MemeGen.ServiceDefaults\MemeGen.ServiceDefaults.csproj" />
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Aspire.Azure.Data.Tables" Version="9.4.2" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
         <PackageReference Include="Aspire.Azure.Storage.Blobs" Version="*" />
+        
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9">
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
           <PrivateAssets>all</PrivateAssets>
@@ -26,6 +29,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+
 
     </ItemGroup>
 

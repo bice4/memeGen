@@ -9,7 +9,7 @@ public enum ImageGenerationStatus
     Failed = 2
 }
 
-public class ImageGeneration(string correlationId, string quote, string templateId)
+public class ImageGeneration(string correlationId, string quote, string templateId, string configurationThumbprint, int personId)
 {
     public ObjectId Id { get; private set; } = ObjectId.GenerateNewId();
 
@@ -27,21 +27,9 @@ public class ImageGeneration(string correlationId, string quote, string template
 
     public DateTimeOffset UpdatedAt { get; private set; } = DateTimeOffset.Now;
 
-    public void SetStatus(ImageGenerationStatus status)
-    {
-        Status = status;
-        UpdatedAt = DateTimeOffset.Now;
-    }
-
-    public void SetBlobFileName(string? blobFileName)
-    {
-        BlobFileName = blobFileName;
-    }
-
-    public void SetAdditionalMessage(string? additionalMessage)
-    {
-        AdditionalMessage = additionalMessage;
-    }
+    public string ConfigurationThumbprint { get; private set; } = configurationThumbprint;
+    
+    public int PersonId { get; private set; } = personId;
 
     public void Update(ImageGenerationStatus status, string? additionalMessage, string? blobFileName = null)
     {

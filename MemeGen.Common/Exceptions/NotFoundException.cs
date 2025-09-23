@@ -12,5 +12,5 @@ public class NotFoundException : DomainException
     private string EntityName { get; }
     private int? EntityId { get; }
 
-    public override string ToResponseMessage() => $"{EntityName} with id: {EntityId} not found";
+    public override string ToResponseMessage() => $"{EntityName} with id: {EntityId ?? 0} not found";
 }

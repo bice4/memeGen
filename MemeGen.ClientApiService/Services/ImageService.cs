@@ -2,8 +2,10 @@
 using Azure.Storage.Blobs;
 using MemeGen.ClientApiService.Models;
 using MemeGen.ClientApiService.Persistent.MongoDb;
+using MemeGen.ClientApiService.Translators;
 using MemeGen.Common.Constants;
 using MemeGen.Common.Exceptions;
+using MemeGen.ConfigurationService;
 using MemeGen.Contracts.Messaging.V1;
 using MemeGen.Contracts.Messaging.V1.Requests;
 using MemeGen.Domain.Entities;
@@ -25,7 +27,8 @@ public class ImageService(
     IImageGenerationRepository imageGenerationRepository,
     IImageCache imageCache,
     IConnection rmqConnection,
-    BlobServiceClient blobServiceClient) : IImageService
+    BlobServiceClient blobServiceClient,
+    IConfigurationService configurationService) : IImageService
 {
     public async Task<PersonImage> CreateImageForPerson(int personId, CancellationToken cancellationToken)
     {
@@ -38,11 +41,19 @@ public class ImageService(
         var correlationId = Guid.NewGuid().ToString("N");
 
         // Select a random template and quote
-
         var (randomTemplate, randomQuote) = imageCache.GetRandomTemplateAndQuote(personTemplates);
 
+        var configuration = await configurationService.GetConfigurationAsync<ImageGenerationConfiguration>(
+            ImageGenerationConfiguration.DefaultRowKey, cancellationToken);
+
+        if (configuration == null)
+            throw new NotFoundException("Configuration", 0);
+
         var cachedImage =
-            await imageCache.GetImageFromCacheAsync(randomTemplate.Id.ToString(), randomQuote, cancellationToken);
+            await imageCache.GetImageFromCacheAsync(
+                [randomTemplate.Id.ToString(), randomQuote, configuration.GetThumbprint()],
+                cancellationToken);
+
         if (cachedImage != null)
         {
             logger.LogInformation("Image found in cache for {PersonId} with {TemplateName} and {Quote}", personId,
@@ -63,11 +74,12 @@ public class ImageService(
         logger.LogInformation("Generating new image for {PersonId} with {TemplateName} and {Quote}", personId,
             randomTemplate.Name, randomQuote);
 
-        var imageGeneration = new ImageGeneration(correlationId, randomQuote, randomTemplate.Id.ToString());
+        var imageGeneration = new ImageGeneration(correlationId, randomQuote, randomTemplate.Id.ToString(),
+            configuration.GetThumbprint(), personId);
 
         // Create RMQ message
         var imageProcessingRequest = new ImageProcessingRequest(
-            correlationId, randomQuote, randomTemplate.Id.ToString());
+            correlationId, randomQuote, randomTemplate.Id.ToString(), configuration.ToMessagingConfig());
 
         // Publish a message to a queue
         using var channel = rmqConnection.CreateModel();
@@ -113,9 +125,10 @@ public class ImageService(
             return new ImageGenerationResult(ImageGenerationStatus.Failed, correlationId, blobResult.errorMessage);
         }
 
-        await imageCache.AddImageToCacheAsync(imageGeneration.TemplateId, imageGeneration.Quote,
+        await imageCache.AddImageToCacheAsync(
+            [imageGeneration.TemplateId, imageGeneration.Quote, imageGeneration.ConfigurationThumbprint],
             imageGeneration.BlobFileName, cancellationToken);
-        
+
         return new ImageGenerationResult(ImageGenerationStatus.Completed, correlationId,
             imageGeneration.AdditionalMessage, blobResult.base64Content);
     }

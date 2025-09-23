@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using MemeGen.Contracts.Messaging.V1.Requests;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -11,12 +12,19 @@ public static class ImageTextDrawer
 {
     private static FontFamily _mainFontFamily;
 
-    private const float Padding = 28f;
-    private const float PaddingX2 = Padding * 2;
+    private const int MaxTextPadding = 50;
+    private const int MinTextPadding = 10;
+
+    private const int MaxBackgroundOpacity = 210;
+    private const int MinBackgroundOpacity = 80;
+
+    private const int DefaultTextPadding = 28;
+    private const byte DefaultBackgroundOpacity = 120;
+
     private const float MinFontSize = 1f;
     private const float MaxFontSize = 65f;
 
-    private static readonly Dictionary<int, float> FontSizeCache = new();
+    private static readonly Dictionary<float, Font?> FontsCache = new();
 
     public static void Init()
     {
@@ -24,7 +32,7 @@ public static class ImageTextDrawer
         _mainFontFamily = fonts.Add("data\\Roboto-Regular.ttf");
     }
 
-    public static async Task DrawTextOnImage(string text, string path)
+    public static async Task DrawTextOnImage(string text, string path, ImageProcessingConfig config)
     {
         using Image input = Image.Load<Rgba32>(path);
 
@@ -35,54 +43,89 @@ public static class ImageTextDrawer
         var fontSize = fsMax;
         var measured = FontRectangle.Empty;
 
-        if (FontSizeCache.TryGetValue(text.Length, out var value))
+        var textPadding = config.TextPadding is <= MaxTextPadding and >= MinTextPadding
+            ? config.TextPadding
+            : DefaultTextPadding;
+        var textPaddingX2 = textPadding * 2;
+
+        while (fsMin <= fsMax)
         {
-            fontSize = value;
-            measured = FindSize(text, fontSize, _mainFontFamily);
+            var mid = (fsMin + fsMax) / 2f;
+            measured = FindSize(text, mid);
+
+            if (measured.Width + textPaddingX2 > width)
+            {
+                // text weight too high decrease font size
+                fsMax = mid - 1f;
+            }
+            else
+            {
+                // text fit can increase font size
+                fsMin = mid + 1f;
+                fontSize = mid;
+            }
+        }
+
+        var font = GetOrCreateFont(fontSize, FontStyle.Regular);
+
+        RectangleF backgroundRectangle;
+        PointF textLocation;
+
+        if (config.TextAtTop)
+        {
+            backgroundRectangle = new RectangleF(
+                0,
+                0,
+                width,
+                measured.Height + textPaddingX2);
+
+            var x = backgroundRectangle.Width / 2 - measured.Width / 2;
+            var y = backgroundRectangle.Height / 2 - measured.Height / 2;
+            textLocation = new PointF(x, y);
         }
         else
         {
-            while (fsMin <= fsMax)
-            {
-                var mid = (fsMin + fsMax) / 2f;
-                measured = FindSize(text, mid, _mainFontFamily);
+            var rectHeight = measured.Height + textPaddingX2;
 
-                if (measured.Width + PaddingX2 > width)
-                {
-                    // text weight too high decrease font size
-                    fsMax = mid - 1f;
-                }
-                else
-                {
-                    // text fit can increase font size
-                    fsMin = mid + 1f;
-                    fontSize = mid;
-                }
-            }
+            backgroundRectangle = new RectangleF(
+                0, input.Height - rectHeight, width, rectHeight);
 
-            FontSizeCache[text.Length] = fontSize;
+            var x = backgroundRectangle.X + backgroundRectangle.Width / 2 - measured.Width / 2;
+            var y = backgroundRectangle.Y + (backgroundRectangle.Height / 2 - measured.Height / 2);
+            textLocation = new PointF(x, y);
         }
 
-        var font = _mainFontFamily.CreateFont(fontSize, FontStyle.Regular);
-
-        var backgroundRectangle = new RectangleF(0, 0, width, measured.Height + PaddingX2);
-        var textLocation = new PointF(backgroundRectangle.Width / 2 - measured.Width / 2,
-            backgroundRectangle.Height / 2 - measured.Height / 2);
+        var backgroundOpacity =
+            config.BackgroundOpacity is <= MaxBackgroundOpacity and >= MinBackgroundOpacity
+                ? (byte)config.BackgroundOpacity
+                : DefaultBackgroundOpacity;
 
         input.Mutate(ctx =>
         {
-            ctx.Fill(new Rgba32(0, 0, 0, 120), backgroundRectangle);
+            ctx.Fill(new Rgba32(0, 0, 0, backgroundOpacity), backgroundRectangle);
             ctx.DrawText(text, font, Color.White, textLocation);
         });
 
-        await input.SaveAsPngAsync(path);
+        await input.SaveAsJpegAsync(path);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static FontRectangle FindSize(string text, float fontSize, FontFamily family)
+    private static FontRectangle FindSize(string text, float fontSize)
     {
-        var font = family.CreateFont(fontSize, FontStyle.Regular);
+        var font = GetOrCreateFont(fontSize, FontStyle.Regular);
         var opts = new TextOptions(font);
         return TextMeasurer.MeasureSize(text, opts);
+    }
+
+    private static Font GetOrCreateFont(float fontSize, FontStyle fontStyle)
+    {
+        if (FontsCache.TryGetValue(fontSize, out var font))
+        {
+            return font ?? _mainFontFamily.CreateFont(fontSize, fontStyle);
+        }
+
+        font = _mainFontFamily.CreateFont(fontSize, fontStyle);
+        FontsCache.Add(fontSize, font);
+        return font;
     }
 }

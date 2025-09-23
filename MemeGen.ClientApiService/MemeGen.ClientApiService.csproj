@@ -21,6 +21,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\MemeGen.Common\MemeGen.Common.csproj" />
+      <ProjectReference Include="..\MemeGen.ConfigurationService\MemeGen.ConfigurationService.csproj" />
       <ProjectReference Include="..\MemeGen.Contracts\MemeGen.Contracts.csproj" />
       <ProjectReference Include="..\MemeGen.Domain\MemeGen.Domain.csproj" />
       <ProjectReference Include="..\MemeGen.ServiceDefaults\MemeGen.ServiceDefaults.csproj" />

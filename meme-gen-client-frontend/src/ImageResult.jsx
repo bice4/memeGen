@@ -25,6 +25,8 @@ export default function ImageResult({ data, onTryAgain }) {
                 <div className='text-center text-lg'>
                     <div>🤖 Blue Screen of Emotion... Генератор перегрелся, перезапускаем ядро 🚀</div>
                     <div className='mt-2 text-blue-300'>{data.additionalInformation}</div>
+                    <Button className='mt-5' label="Try again" severity="secondary" onClick={onTryAgain} text />
+
                 </div>
             )}
 

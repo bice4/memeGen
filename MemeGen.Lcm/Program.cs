@@ -12,7 +12,7 @@ builder.AddServiceDefaults();
 
 builder.AddMongoDBClient(connectionName: "memeGenTemplates");
 builder.AddRedisClient(connectionName: "imageRedisCache");
-builder.AddAzureBlobServiceClient("mainPhotoContainer");
+builder.AddAzureBlobServiceClient("photocontainer");
 
 var host = builder.Build();
 host.Run();

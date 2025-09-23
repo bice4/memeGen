@@ -32,13 +32,14 @@ public class TemplateController(
             return responseBuilder.HandleException(e);
         }
     }
-    
-    [HttpGet("content")]
-    public async Task<IActionResult> GetAllContent(CancellationToken cancellationToken)
+
+    [HttpGet("content/{personId:int}")]
+    public async Task<IActionResult> GetAllContent(int personId, CancellationToken cancellationToken)
     {
         try
         {
-            var allImageContentByPersonIdAsync = await templateService.GetAllImageContentAsync(cancellationToken);
+            var allImageContentByPersonIdAsync =
+                await templateService.GetAllImageContentAsync(personId, cancellationToken);
             return Ok(allImageContentByPersonIdAsync);
         }
         catch (DomainException e)

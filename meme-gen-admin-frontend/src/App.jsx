@@ -9,6 +9,7 @@ import { Toast } from 'primereact/toast';
 import Templates from './components/Templates';
 import GeneratedGallery from './components/GeneratedGallery';
 import { TabView, TabPanel } from 'primereact/tabview';
+import Configuration from './components/Configuration';
 
 export default function MyApp() {
   const [person, setPerson] = useState();
@@ -16,6 +17,11 @@ export default function MyApp() {
   const [createTemplateDialogVisible, setCreateTemplateDialogVisible] = useState(false);
   const [selectedPhotoForTemplate, setSelectedPhotoForTemplate] = useState();
   const [quotesCount, setQuotesCount] = useState(0);
+  const [isConfigVisible, setIsConfigVisible] = useState(false);
+
+  const handleOpenConfiguration = () => {
+    setIsConfigVisible(!isConfigVisible);
+  }
 
   const showCreateTemplateDialog = (e) => {
     if (quotesCount === 0) {
@@ -34,6 +40,7 @@ export default function MyApp() {
 
   const selectPerson = (e) => {
     setCreateTemplateDialogVisible(false);
+    setIsConfigVisible(false);
     setSelectedPhotoForTemplate();
     setPerson(e);
   }
@@ -60,8 +67,8 @@ export default function MyApp() {
 
   return (
     <div>
-      <MainHeader onSelectPerson={selectPerson} />
-      {!createTemplateDialogVisible && (
+      <MainHeader onSelectPerson={selectPerson} openConfiguration={handleOpenConfiguration} />
+      {!createTemplateDialogVisible && !isConfigVisible && (
         <div>
           {person && (
             <TabView>
@@ -87,17 +94,20 @@ export default function MyApp() {
                 </div>
               </TabPanel>
               <TabPanel header="Gallery" leftIcon="pi pi-camera mr-2">
-                <GeneratedGallery onCallToast={showToast} />
+                <GeneratedGallery selectedPerson={person} onCallToast={showToast} />
               </TabPanel>
             </TabView>
 
           )}
         </div>
       )}
-      {createTemplateDialogVisible && (
+      {createTemplateDialogVisible && !isConfigVisible && (
         <CreateTemplate selectedPerson={person} selectedPhoto={selectedPhotoForTemplate} onCallToast={showToast} onTemplateCreated={hideCreateTemplateDialog} />
       )}
       <Toast ref={toast} />
+      {isConfigVisible && (
+        <Configuration onCallToast={showToast} />
+      )}
     </div>
   );
 }

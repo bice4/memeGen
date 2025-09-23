@@ -23,6 +23,7 @@ function App() {
       .catch(error => console.error('Error fetching persons:', error));
   }
   useEffect(() => {
+    
     getPersons();
   }, []);
 

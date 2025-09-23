@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Dropdown } from 'primereact/dropdown';
-import { Divider } from 'primereact/divider';
+import { Button } from 'primereact/button';
 
-export default function MainHeader({ onSelectPerson, onCallToast }) {
+export default function MainHeader({ onSelectPerson, onCallToast, openConfiguration }) {
     const [persons, setPersons] = useState([]);
     const [selectedPerson, setSelectedPerson] = useState(null);
     const [isSelected, setIsSelected] = useState(false);
@@ -16,7 +16,6 @@ export default function MainHeader({ onSelectPerson, onCallToast }) {
 
         setSelectedPerson(p);
         onSelectPerson(p);
-
     };
 
     const getPersons = async () => {
@@ -37,7 +36,6 @@ export default function MainHeader({ onSelectPerson, onCallToast }) {
         <>
             {!isSelected && (
                 <div className='flex align-items-center justify-content-center h-screen'>
-
                     <Dropdown value={selectedPerson} onChange={(e) => selectPerson(e.value)} options={persons} optionLabel="name"
                         placeholder="Select a person" className="w-full md:w-14rem" />
                 </div>
@@ -47,7 +45,8 @@ export default function MainHeader({ onSelectPerson, onCallToast }) {
                 <div className='flex align-items-center justify-content-left p-4'>
                     <span className='text-3xl'>🤠</span>
                     <Dropdown showClear value={selectedPerson} onChange={(e) => selectPerson(e.value)} options={persons} optionLabel="name"
-                        placeholder="Select a person" className="w-full md:w-14rem ml-2" />
+                        placeholder="Select a person" className="w-full md:w-14rem ml-3" />
+                    <Button className='ml-3' icon="pi pi-cog" rounded text severity="help" aria-label="settings" onClick={openConfiguration} />
                 </div>
             )}
         </>

@@ -29,12 +29,4 @@
         <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="*"/>
 
     </ItemGroup>
-    
-<!--    <ItemGroup>-->
-<!--      <None Include="..\MemeGen.AdminApiService\Persistent\init.sql">-->
-<!--        <Link>init.sql</Link>-->
-<!--        <CopyToOutputDirectory>Always</CopyToOutputDirectory>-->
-<!--      </None>-->
-<!--    </ItemGroup>-->
-
 </Project>
