@@ -16,32 +16,40 @@ export default function MyApp() {
   const toast = useRef(null);
   const [createTemplateDialogVisible, setCreateTemplateDialogVisible] = useState(false);
   const [selectedPhotoForTemplate, setSelectedPhotoForTemplate] = useState();
-  const [quotesCount, setQuotesCount] = useState(0);
   const [isConfigVisible, setIsConfigVisible] = useState(false);
+  const [selectedTemplateForUpdate, setSelectedTemplateForUpdate] = useState();
+  const [templateDialogMode, setTemplateDialogMode] = useState(-1);
 
   const handleOpenConfiguration = () => {
     setIsConfigVisible(!isConfigVisible);
   }
 
   const showCreateTemplateDialog = (e) => {
-    if (quotesCount === 0) {
-      showToast(1, "No quotes found");
-      return;
-    }
-
     setSelectedPhotoForTemplate(e);
     setCreateTemplateDialogVisible(true);
+    setSelectedTemplateForUpdate();
+    setTemplateDialogMode(0);
+  }
+
+  const showEditTemplate = (e) => {
+    console.log(e);
+    setSelectedTemplateForUpdate(e);
+    setCreateTemplateDialogVisible(true);
+    setTemplateDialogMode(1);
   }
 
   const hideCreateTemplateDialog = () => {
     setSelectedPhotoForTemplate();
     setCreateTemplateDialogVisible(false);
+    setSelectedTemplateForUpdate();
+    setTemplateDialogMode(-1);
   }
 
   const selectPerson = (e) => {
     setCreateTemplateDialogVisible(false);
     setIsConfigVisible(false);
     setSelectedPhotoForTemplate();
+    setSelectedTemplateForUpdate();
     setPerson(e);
   }
 
@@ -82,14 +90,14 @@ export default function MyApp() {
               <TabPanel header="Quotes" leftIcon="pi pi-clipboard mr-2">
                 <div className='flex'>
                   <div className='col-12'>
-                    <Quotes selectedPerson={person} onCallToast={showToast} onCallQuotesCount={setQuotesCount} />
+                    <Quotes selectedPerson={person} onCallToast={showToast} />
                   </div>
                 </div>
               </TabPanel>
               <TabPanel header="Templates" leftIcon="pi pi-objects-column mr-2">
                 <div className='flex'>
                   <div className='col-12'>
-                    <Templates selectedPerson={person} onCallToast={showToast} />
+                    <Templates selectedPerson={person} onCallToast={showToast} onEditTemplate={showEditTemplate} />
                   </div>
                 </div>
               </TabPanel>
@@ -102,7 +110,9 @@ export default function MyApp() {
         </div>
       )}
       {createTemplateDialogVisible && !isConfigVisible && (
-        <CreateTemplate selectedPerson={person} selectedPhoto={selectedPhotoForTemplate} onCallToast={showToast} onTemplateCreated={hideCreateTemplateDialog} />
+        <CreateTemplate selectedPerson={person} selectedPhoto={selectedPhotoForTemplate} onCallToast={showToast} 
+        onTemplateCreated={hideCreateTemplateDialog} selectedTemplate={selectedTemplateForUpdate}
+        mode={templateDialogMode} />
       )}
       <Toast ref={toast} />
       {isConfigVisible && (

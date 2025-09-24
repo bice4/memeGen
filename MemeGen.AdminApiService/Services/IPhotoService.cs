@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using MemeGen.ApiService.Persistent;
 using MemeGen.Common.Constants;
 using MemeGen.Common.Exceptions;

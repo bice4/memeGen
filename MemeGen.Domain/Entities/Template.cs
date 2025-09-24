@@ -30,6 +30,12 @@ public class Template(
 
     public int Usages { get; private set; } = usages;
 
+    public void Update(string name, List<string> quotes)
+    {
+        Name = name;
+        Quotes = quotes;
+    }
+    
     public void IncreaseUsage()
     {
         Usages++;

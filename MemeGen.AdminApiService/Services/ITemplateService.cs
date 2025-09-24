@@ -15,6 +15,7 @@ namespace MemeGen.ApiService.Services;
 public interface ITemplateService
 {
     Task CreateAsync(CreateTemplateRequest createTemplateRequest, CancellationToken cancellationToken);
+    Task UpdateAsync(UpdateTemplateRequest updateTemplateRequest, CancellationToken cancellationToken);
 
     Task<List<Template>> GetAllAsync(CancellationToken cancellationToken);
 
@@ -59,6 +60,25 @@ public class TemplateService(
         logger.LogInformation("Template {Id} has been created.", template.Id);
     }
 
+    public async Task UpdateAsync(UpdateTemplateRequest updateTemplateRequest, CancellationToken cancellationToken)
+    {
+        if (updateTemplateRequest.Quotes.Count == 0)
+            throw new InvalidDataException("Quotes cannot be empty");
+
+        if (!ObjectId.TryParse(updateTemplateRequest.Id, out var objectId))
+            throw new InvalidDataException("Invalid template ID format");
+
+        var template = await templateRepository.GetByIdAsync(objectId, cancellationToken);
+        if (template == null)
+            throw new NotFoundException("Template", 0);
+
+        template.Update(updateTemplateRequest.Name, updateTemplateRequest.Quotes);
+
+        await templateRepository.UpdateAsync(template, cancellationToken);
+
+        logger.LogInformation("Template {Id} has been updated.", template.Id);
+    }
+
     public Task<List<Template>> GetAllAsync(CancellationToken cancellationToken)
         => templateRepository.GetAllAsync(cancellationToken);
 
@@ -98,7 +118,7 @@ public class TemplateService(
         try
         {
             var blob = client.GetBlobClient(blobFileName);
-            
+
             var blobContent = await blob.DownloadContentAsync(cancellationToken);
             if (!blobContent.HasValue)
                 return null!;

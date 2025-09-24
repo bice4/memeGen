@@ -21,7 +21,6 @@ public static class EntityTranslator
         => new(request.Name, request.PhotoId, photoBlobFileName, request.Quotes,
             request.PersonId, request.PersonName, request.PhotoTitle);
     
-
     public static ImageGenerationConfigurationShortDto ToShortDto(this ImageGenerationConfiguration configuration)
         => new(configuration.TextPadding, configuration.BackgroundOpacity, configuration.TextAtTop, configuration.UseUpperText);
 

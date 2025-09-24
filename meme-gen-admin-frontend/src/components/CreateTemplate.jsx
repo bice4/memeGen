@@ -1,64 +1,98 @@
 import { useState, useEffect } from "react";
-import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { PickList } from 'primereact/picklist';
+import { Divider } from "primereact/divider";
 
-export default function CreateTemplate({ selectedPerson, selectedPhoto, onCallToast, onTemplateCreated }) {
+export default function CreateTemplate({ selectedPerson, selectedPhoto, onCallToast, onTemplateCreated, selectedTemplate, mode }) {
     const [quotes, setQuotes] = useState([]);
-    const [selectedBase64, setSelectedBase64] = useState('');
+    const [imageBase64, setImageBase64] = useState('');
     const [target, setTarget] = useState([]);
     const [newTemplateName, setNewTemplateName] = useState('');
+    const [photoTitle, setPhotoTitle] = useState('');
 
-    const getQuotes = async () => {
-        if (selectedPerson == null) return;
-        fetch(`/api/Quote/person/${selectedPerson.id}`)
+    const getCreationInfo = async () => {
+        if (selectedPerson === null) return;
+
+        if (mode == 1) return;
+
+        fetch(`/api/Template/createInfo/${selectedPhoto.id}/${selectedPerson.id}`)
             .then(response => response.json())
             .then(json => {
-                setQuotes(json);
+                setQuotes(json.quotes);
+                setImageBase64(`data:image/png;base64,${json.photoBase64}`);
+                setPhotoTitle(json.photoTitle);
             })
             .catch(error => {
                 console.error('Error fetching quotes:', error);
-                onCallToast(1, 'Failed to fetch quotes')
+                onCallToast(1, 'Failed to fetch creation information')
             });
     }
 
-    const getPhotoContent = async (e) => {
-        await fetch(`api/Photo/content/${e.id}`)
-            .then((res) => res.text())
-            .then(text => {
-                setSelectedBase64(`data:image/png;base64,${text}`);
+    const getUpdateInfo = async () => {
+
+        if (mode == 0) return;
+
+        await fetch(`api/Template/updateInfo/${selectedTemplate.id}`)
+            .then((res) => res.json())
+            .then(json => {
+                setImageBase64(`data:image/png;base64,${json.photoBase64}`);
+                setPhotoTitle(json.photoTitle);
+                setQuotes(json.quotesToAdd);
+                setTarget(json.templateQuotes);
+                setNewTemplateName(json.name);
             })
             .catch(error => {
                 console.error('Error fetching photo:', error);
-                onCallToast(1, 'Failed to fetch photo')
+                onCallToast(1, 'Failed to fetch update information')
             });
     }
 
-    const addNewTemplate = async () => {
+    const addorUpdateTemplate = async () => {
         const quoteNames = target.map(u => u.quote);
-        const response = await fetch('api/template', {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ Name: newTemplateName, PersonId: selectedPerson.id, PhotoId: selectedPhoto.id, Quotes: quoteNames, PhotoTitle: selectedPhoto.title, PersonName: selectedPerson.name })
-        });
 
-        if (response.ok) {
-            onCallToast(0, 'New template added');
-            onTemplateCreated();
+        if (mode == 0) {
+            const response = await fetch('api/template', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ Name: newTemplateName, PersonId: selectedPerson.id, PhotoId: selectedPhoto.id, Quotes: quoteNames, PhotoTitle: selectedPhoto.title, PersonName: selectedPerson.name })
+            });
+
+            if (response.ok) {
+                onCallToast(0, 'New template added');
+                onTemplateCreated();
+            } else {
+                console.error("Error:", response.status);
+                onCallToast(1, 'Failed to add template');
+            }
         } else {
-            console.error("Error:", response.status);
-            onCallToast(1, 'Failed to add template');
+            const response = await fetch('api/template', {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ Name: newTemplateName, Id: selectedTemplate.id, Quotes: quoteNames })
+            });
+
+            if (response.ok) {
+                onCallToast(0, 'Template updated');
+                onTemplateCreated();
+            } else {
+                console.error("Error:", response.status);
+                onCallToast(1, 'Failed to update template');
+            }
         }
     }
 
     useEffect(() => {
-        getQuotes();
-        getPhotoContent(selectedPhoto);
+
+        getUpdateInfo(selectedPhoto);
+        getCreationInfo();
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedPerson]);
+    }, [selectedPerson, selectedTemplate, mode]);
 
     const onChange = (event) => {
         setQuotes(event.source);
@@ -82,8 +116,12 @@ export default function CreateTemplate({ selectedPerson, selectedPhoto, onCallTo
     }
 
     return (
-        <Card title="Create template">
-            <div className='flex flex-column'>
+        <div className="ml-5">
+            <Divider />
+            <div className='text-2xl'>
+                {mode === 0 ? 'Create' : 'Update'}  template
+            </div>
+            <div className='flex flex-column mt-5'>
                 <div className='flex flex-column'>
                     <div className='text-lg'>Name</div>
                     <div className='flex mt-2'>
@@ -96,11 +134,13 @@ export default function CreateTemplate({ selectedPerson, selectedPhoto, onCallTo
                     <div className='flex flex-column'>
                         <div className='text-xl'>Selected photo</div>
 
-                        <div className='text-lg mt-4'>Title: {selectedPhoto.title}</div>
+                        <div className='text-lg mt-4'>Title: {photoTitle}</div>
                         <div className='flex mt-4'>
-                            {selectedBase64 && (
-                                <img className='w-8 h-8' src={selectedBase64} />
-
+                            {imageBase64 && (
+                                <img className='w-8 h-8' src={imageBase64} style={{
+                                        borderRadius: "12px",
+                                        boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
+                                    }} />
                             )}
                         </div>
                     </div>
@@ -112,10 +152,13 @@ export default function CreateTemplate({ selectedPerson, selectedPhoto, onCallTo
                             sourceHeader="Available" targetHeader="Selected" sourceStyle={{ height: '24rem' }} targetStyle={{ height: '24rem' }} />
                     </div>
                 </div>
+
             </div>
-            <div className='flex'>
-                <Button className='ml-4' label='Create' icon='pi pi-upload' aria-label="Filter" onClick={addNewTemplate} disabled={isTemplateInvalid()} />
+            <div className='flex flex-column'>
+                <Divider />
+
+                <Button className='ml-4 w-1' label={mode == 0 ? 'Create' : 'Update'} icon='pi pi-upload' aria-label="Filter" onClick={addorUpdateTemplate} disabled={isTemplateInvalid()} />
             </div>
-        </Card>
+        </div>
     );
 }

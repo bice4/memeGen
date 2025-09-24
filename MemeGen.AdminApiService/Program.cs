@@ -24,6 +24,7 @@ builder.AddMongoDbServices();
 builder.Services.AddScoped<IResponseBuilder, ResponseBuilder>();
 builder.Services.AddScoped<IPhotoService, PhotoService>();
 builder.Services.AddScoped<IQuoteService, QuoteService>();
+builder.Services.AddScoped<ITemplateUpdateService, TemplateUpdateService>();
 
 builder.Services.AddScoped<ITemplateService, TemplateService>();
 

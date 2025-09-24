@@ -13,7 +13,8 @@ namespace MemeGen.ApiService.Controllers;
 public class TemplateController(
     ILogger<TemplateController> logger,
     ITemplateService templateService,
-    IResponseBuilder responseBuilder) : ControllerBase
+    IResponseBuilder responseBuilder,
+    ITemplateUpdateService templateUpdateService) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
@@ -65,8 +66,8 @@ public class TemplateController(
 
             var template = await templateService.GetByIdAsync(objectId, cancellationToken);
 
-            return template == null 
-                ? NotFound("Template not found") 
+            return template == null
+                ? NotFound("Template not found")
                 : Ok(template);
         }
         catch (DomainException e)
@@ -97,6 +98,43 @@ public class TemplateController(
         }
     }
 
+    [HttpGet("updateInfo/{id}")]
+    public async Task<IActionResult> GetUpdateInformation(string id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var updateInformation = await templateUpdateService.GetUpdateInformationAsync(id, cancellationToken);
+            return Ok(updateInformation);
+        }
+        catch (DomainException e)
+        {
+            return responseBuilder.HandleDomainException(e);
+        }
+        catch (Exception e)
+        {
+            return responseBuilder.HandleException(e);
+        }
+    }
+
+    [HttpGet("createInfo/{photoId:int}/{personId:int}")]
+    public async Task<IActionResult> GetCreateInformation(int photoId, int personId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var createInformation =
+                await templateUpdateService.GetCreateInformationAsync(photoId, personId, cancellationToken);
+            return Ok(createInformation);
+        }
+        catch (DomainException e)
+        {
+            return responseBuilder.HandleDomainException(e);
+        }
+        catch (Exception e)
+        {
+            return responseBuilder.HandleException(e);
+        }
+    }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateTemplateRequest request,
@@ -105,6 +143,25 @@ public class TemplateController(
         try
         {
             await templateService.CreateAsync(request, cancellationToken);
+            return Ok();
+        }
+        catch (DomainException e)
+        {
+            return responseBuilder.HandleDomainException(e);
+        }
+        catch (Exception e)
+        {
+            return responseBuilder.HandleException(e);
+        }
+    }
+    
+    [HttpPatch]
+    public async Task<IActionResult> Create([FromBody] UpdateTemplateRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await templateService.UpdateAsync(request, cancellationToken);
             return Ok();
         }
         catch (DomainException e)

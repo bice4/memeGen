@@ -10,7 +10,7 @@ import { Skeleton } from 'primereact/skeleton';
 import { FileUpload } from 'primereact/fileupload';
 import { Tag } from 'primereact/tag';
 
-export default function Quotes({ selectedPerson, onCallToast, onCallQuotesCount }) {
+export default function Quotes({ selectedPerson, onCallToast }) {
 
     const [isLoading, setIsLoading] = useState(true);
     const [quotes, setQuotes] = useState([]);
@@ -57,6 +57,10 @@ export default function Quotes({ selectedPerson, onCallToast, onCallQuotesCount 
                 setIsLoading(false);
                 onCallToast(1, 'Failed to fetch quotes')
             });
+    }
+
+    const isQuoteValid = () => {
+        return newQuoteContent !== '' && newQuoteContent.length > 50;
     }
 
     const uploadTextFile = async () => {
@@ -162,13 +166,6 @@ export default function Quotes({ selectedPerson, onCallToast, onCallQuotesCount 
     };
 
     useEffect(() => {
-        if (quotes.length > 0) {
-            onCallQuotesCount(quotes.length);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [quotes]);
-
-    useEffect(() => {
         getQuotes();
         setNewQuoteContent('');
         setSelectedQuote();
@@ -215,9 +212,22 @@ export default function Quotes({ selectedPerson, onCallToast, onCallQuotesCount 
                             Add new quote
                         </div>
                         <div className='flex mt-4'>
-                            <InputText className='w-8' value={newQuoteContent} onChange={(e) => setNewQuoteContent(e.target.value)} />
-                            <Button className='ml-4' icon='pi pi-upload' aria-label="Filter" onClick={addNewQuote} disabled={newQuoteContent === ''} />
+                            <InputText className='w-8' invalid={isQuoteValid()} value={newQuoteContent} onChange={(e) => setNewQuoteContent(e.target.value)} />
+                            <Button className='ml-4' icon='pi pi-upload' aria-label="Filter" onClick={addNewQuote} disabled={newQuoteContent === '' || isQuoteValid()} />
                         </div>
+
+                        {isQuoteValid() && (
+                            <div className='flex mt-1'>
+                                <div className='text-base'>
+                                    <span style={{
+                                        color: "red"
+                                    }}>
+                                        Quote should be less or equal than 50 symbols
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
                         <div className='flex mt-4'>
                             <div className='text-2xl w-12'>
                                 Upload text file with quotes

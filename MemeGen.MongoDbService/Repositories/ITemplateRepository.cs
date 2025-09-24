@@ -20,6 +20,8 @@ public interface ITemplateRepository
     Task<List<Template>> GetAllAsync(CancellationToken cancellationToken);
 
     Task DeleteAsync(ObjectId id, CancellationToken cancellationToken);
+
+    Task UpdateAsync(Template template, CancellationToken cancellationToken);
 }
 
 public class TemplateRepository(IMongoClient client) : ITemplateRepository
@@ -35,11 +37,18 @@ public class TemplateRepository(IMongoClient client) : ITemplateRepository
         var collection = GetCollection();
         return collection.Find(template => true).ToListAsync(cancellationToken: cancellationToken);
     }
-    
+
     public Task DeleteAsync(ObjectId id, CancellationToken cancellationToken)
     {
         var collection = GetCollection();
         return collection.DeleteOneAsync(template => template.Id == id, cancellationToken: cancellationToken);
+    }
+
+    public Task UpdateAsync(Template template, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection();
+        var filter = Builders<Template>.Filter.Eq(t => t.Id, template.Id);
+        return collection.ReplaceOneAsync(filter, template, cancellationToken: cancellationToken);
     }
 
     public Task<Template?> GetByIdAsync(ObjectId id, CancellationToken cancellationToken)

@@ -7,7 +7,7 @@ import { ContextMenu } from 'primereact/contextmenu';
 import { Skeleton } from 'primereact/skeleton';
 
 
-export default function Templates({ selectedPerson, onCallToast }) {
+export default function Templates({ selectedPerson, onCallToast, onEditTemplate }) {
 
     const [isLoading, setIsLoading] = useState(true);
     const [templates, setTemplate] = useState([]);
@@ -15,6 +15,7 @@ export default function Templates({ selectedPerson, onCallToast }) {
     const cm = useRef(null);
 
     const menuModel = [
+        { label: 'Edit', icon: 'pi pi-fw pi-pencil', command: () => onEditTemplate(selectedTemplate) },
         { label: 'Delete', icon: 'pi pi-fw pi-times', command: () => deleteTemplate(selectedTemplate) }
     ];
 
