@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using Azure.Storage.Blobs;
 using MemeGen.Common.Constants;
+using MemeGen.ConfigurationService;
+using MemeGen.Domain.Entities.Configuration;
 using MemeGen.MongoDbService.Repositories;
 using StackExchange.Redis;
 
@@ -15,9 +17,10 @@ public class LcmService(
     ILogger<LcmService> logger,
     BlobServiceClient blobServiceClient,
     IConnectionMultiplexer mux,
-    IImageGenerationRepository imageGenerationRepository) : ILcmService
+    IImageGenerationRepository imageGenerationRepository,
+    IConfigurationService configurationService) : ILcmService
 {
-    private readonly TimeSpan _ttl = TimeSpan.FromHours(2);
+    private readonly TimeSpan _defaultImageRetentionInMinutes = TimeSpan.FromMinutes(120);
 
     public async Task CleanAsync(CancellationToken cancellationToken)
     {
@@ -25,10 +28,17 @@ public class LcmService(
         logger.LogInformation("Cleaning up lcm storage...");
         var generationResults = await imageGenerationRepository.GetAllAsync(cancellationToken);
 
+        var imageCachingConfiguration = await configurationService.GetConfigurationAsync<ImageCachingConfiguration>(
+            ImageCachingConfiguration.DefaultRowKey, cancellationToken);
+
+        var retention = imageCachingConfiguration == null
+            ? _defaultImageRetentionInMinutes
+            : TimeSpan.FromMinutes(imageCachingConfiguration.ImageRetentionInMinutes);
+
         var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
         var redis = mux.GetDatabase();
         var expiredGenerationResults = generationResults.Where(generationResult =>
-            generationResult.UpdatedAt.Add(_ttl) < DateTime.UtcNow).ToList();
+            generationResult.UpdatedAt.Add(retention) < DateTime.UtcNow).ToList();
 
         logger.LogInformation("Expired generation results: {Count}", expiredGenerationResults.Count);
 

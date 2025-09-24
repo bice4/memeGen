@@ -3,9 +3,7 @@ import { tr } from 'framer-motion/client';
 import './App.css';
 
 export default function Persons({ persons, handleClick }) {
-
     return (
-
         <div>
             <div style={{
                 display: "flex",
@@ -45,6 +43,5 @@ export default function Persons({ persons, handleClick }) {
                 }
             </div>
         </div>
-
     )
 }

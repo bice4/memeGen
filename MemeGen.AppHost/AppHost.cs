@@ -74,8 +74,10 @@ builder.AddProject<Projects.MemeGen_Lcm>("lcmWorker")
     .WithReference(azureBlobPhotoContainer)
     .WithReference(mongodb)
     .WithReference(imageRedisCache)
+    .WithReference(azureTables)
     .WaitFor(azureBlobStorage)
     .WaitFor(mongodb)
-    .WaitFor(imageRedisCache);
+    .WaitFor(imageRedisCache)
+    .WaitFor(azureTables);
 
 builder.Build().Run();

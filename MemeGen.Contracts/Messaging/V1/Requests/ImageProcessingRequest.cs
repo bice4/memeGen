@@ -13,4 +13,4 @@ public class ImageProcessingRequest(
     public ImageProcessingConfig ImageProcessingConfig { get; set; } = imageProcessingConfig;
 }
 
-public record ImageProcessingConfig(int TextPadding, int BackgroundOpacity, bool TextAtTop);
+public record ImageProcessingConfig(int TextPadding, int BackgroundOpacity, bool TextAtTop, bool UseUpperText);

@@ -1,3 +1,4 @@
+using MemeGen.ConfigurationService;
 using MemeGen.Lcm;
 using MemeGen.Lcm.Services;
 using MemeGen.MongoDbService;
@@ -9,6 +10,7 @@ builder.AddMongoDbServices();
 
 builder.Services.AddHostedService<LcmWorker>();
 builder.Services.AddSingleton<ILcmService, LcmService>();
+builder.AddConfigurationService();
 
 builder.AddServiceDefaults();
 

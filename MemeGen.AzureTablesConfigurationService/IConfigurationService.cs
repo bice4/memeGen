@@ -1,5 +1,4 @@
 ﻿using Azure.Data.Tables;
-using MemeGen.Common.Constants;
 using Microsoft.Extensions.Logging;
 
 namespace MemeGen.ConfigurationService;

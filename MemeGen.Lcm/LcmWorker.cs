@@ -4,7 +4,7 @@ namespace MemeGen.Lcm;
 
 public class LcmWorker(ILogger<LcmWorker> logger, ILcmService service) : BackgroundService
 {
-    private readonly TimeSpan _interval = TimeSpan.FromHours(2);
+    private readonly TimeSpan _interval = TimeSpan.FromMinutes(4);
 
     public override Task StartAsync(CancellationToken cancellationToken)
     {

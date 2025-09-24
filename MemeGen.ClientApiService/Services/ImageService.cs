@@ -8,6 +8,7 @@ using MemeGen.ConfigurationService;
 using MemeGen.Contracts.Messaging.V1;
 using MemeGen.Contracts.Messaging.V1.Requests;
 using MemeGen.Domain.Entities;
+using MemeGen.Domain.Entities.Configuration;
 using MemeGen.MongoDbService.Repositories;
 using RabbitMQ.Client;
 
@@ -43,15 +44,16 @@ public class ImageService(
         // Select a random template and quote
         var (randomTemplate, randomQuote) = imageCache.GetRandomTemplateAndQuote(personTemplates);
 
-        var configuration = await configurationService.GetConfigurationAsync<ImageGenerationConfiguration>(
-            ImageGenerationConfiguration.DefaultRowKey, cancellationToken);
+        var imageGenerationConfiguration =
+            await configurationService.GetConfigurationAsync<ImageGenerationConfiguration>(
+                ImageGenerationConfiguration.DefaultRowKey, cancellationToken);
 
-        if (configuration == null)
+        if (imageGenerationConfiguration == null)
             throw new NotFoundException("Configuration", 0);
 
         var cachedImage =
             await imageCache.GetImageFromCacheAsync(
-                [randomTemplate.Id.ToString(), randomQuote, configuration.GetThumbprint()],
+                [randomTemplate.Id.ToString(), randomQuote, imageGenerationConfiguration.GetThumbprint()],
                 cancellationToken);
 
         if (cachedImage != null)
@@ -75,11 +77,11 @@ public class ImageService(
             randomTemplate.Name, randomQuote);
 
         var imageGeneration = new ImageGeneration(correlationId, randomQuote, randomTemplate.Id.ToString(),
-            configuration.GetThumbprint(), personId);
+            imageGenerationConfiguration.GetThumbprint(), personId);
 
         // Create RMQ message
         var imageProcessingRequest = new ImageProcessingRequest(
-            correlationId, randomQuote, randomTemplate.Id.ToString(), configuration.ToMessagingConfig());
+            correlationId, randomQuote, randomTemplate.Id.ToString(), imageGenerationConfiguration.ToMessagingConfig());
 
         // Publish a message to a queue
         using var channel = rmqConnection.CreateModel();
@@ -125,9 +127,18 @@ public class ImageService(
             return new ImageGenerationResult(ImageGenerationStatus.Failed, correlationId, blobResult.errorMessage);
         }
 
+        var imageCachingConfiguration =
+            await configurationService.GetConfigurationAsync<ImageCachingConfiguration>(
+                ImageCachingConfiguration.DefaultRowKey, cancellationToken);
+
+        TimeSpan? expiration = null;
+
+        if (imageCachingConfiguration != null)
+            expiration = TimeSpan.FromMinutes(imageCachingConfiguration.CacheDurationInMinutes);
+
         await imageCache.AddImageToCacheAsync(
             [imageGeneration.TemplateId, imageGeneration.Quote, imageGeneration.ConfigurationThumbprint],
-            imageGeneration.BlobFileName, cancellationToken);
+            imageGeneration.BlobFileName, expiration, cancellationToken);
 
         return new ImageGenerationResult(ImageGenerationStatus.Completed, correlationId,
             imageGeneration.AdditionalMessage, blobResult.base64Content);

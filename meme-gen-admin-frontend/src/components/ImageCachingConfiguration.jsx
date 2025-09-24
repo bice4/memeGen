@@ -2,31 +2,26 @@
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { useState, useEffect } from "react";
 import { InputNumber } from 'primereact/inputnumber';
-import { Checkbox } from "primereact/checkbox";
 import { Divider } from 'primereact/divider';
 import { Button } from 'primereact/button';
 
-export default function ImageGenerationConfiguration({ onCallToast }) {
+export default function ImageCachingConfiguration({ onCallToast }) {
     const [isLoading, setIsLoading] = useState(true);
 
-    const [padding, setPadding] = useState(28);
-    const [backgroundOpacity, setBackgroundOpacity] = useState(120);
-    const [textAtTop, setTextAtTop] = useState(true);
-    const [useUpperText, setUseUpperText] = useState(false);
+    const [cacheDurationInMinutes, setCacheDurationInMinutes] = useState(60);
+    const [imageRetentionInMinutes, setImageRetentionInMinutes] = useState(120);
 
     const [isSavingConfiguration, setIsSavingConfiguration] = useState(false);
 
     const apiUrl = '/api/Configuration';
 
     const getConfiguration = async () => {
-        fetch(`${apiUrl}/1`)
+        fetch(`${apiUrl}/2`)
             .then(response => response.json())
             .then(json => {
                 setIsLoading(false);
-                setBackgroundOpacity(json.backgroundOpacity);
-                setPadding(json.textPadding);
-                setTextAtTop(json.textAtTop);
-                setUseUpperText(json.useUpperText);
+                setCacheDurationInMinutes(json.cacheDurationInMinutes);
+                setImageRetentionInMinutes(json.imageRetentionInMinutes);
             })
             .catch(error => {
                 console.error('Error fetching configuration:', error);
@@ -37,12 +32,12 @@ export default function ImageGenerationConfiguration({ onCallToast }) {
 
     const saveConfiguration = async () => {
         setIsSavingConfiguration(true);
-        const response = await fetch(`${apiUrl}/imageGeneration`, {
+        const response = await fetch(`${apiUrl}/imageCaching`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ TextPadding: padding, TextAtTop: textAtTop, BackgroundOpacity: backgroundOpacity, UseUpperText: useUpperText })
+            body: JSON.stringify({ CacheDurationInMinutes: cacheDurationInMinutes, ImageRetentionInMinutes: imageRetentionInMinutes })
         });
 
         if (response.ok) {
@@ -70,20 +65,12 @@ export default function ImageGenerationConfiguration({ onCallToast }) {
                 : (
                     <div>
                         <div className="flex-auto">
-                            <label htmlFor="minmax" className="font-bold block mb-2">Padding</label>
-                            <InputNumber inputId="minmax" showButtons value={padding} onValueChange={(e) => setPadding(e.value)} min={10} max={50} />
+                            <label htmlFor="minmax" className="font-bold block mb-2">Cache duration in minutes</label>
+                            <InputNumber inputId="minmax" showButtons value={cacheDurationInMinutes} onValueChange={(e) => setCacheDurationInMinutes(e.value)} min={1} max={1440} />
                         </div>
                         <div className="flex-auto mt-5">
-                            <label htmlFor="minmax" className="font-bold block mb-2">Background opacity</label>
-                            <InputNumber inputId="minmax" showButtons value={backgroundOpacity} onValueChange={(e) => setBackgroundOpacity(e.value)} min={80} max={210} />
-                        </div>
-                        <div className="flex-auto mt-5">
-                            <label htmlFor="minmax" className="font-bold block mb-2">Draw text at {textAtTop ? ('top') : ('bottom')}</label>
-                            <Checkbox onChange={e => setTextAtTop(e.checked)} checked={textAtTop}></Checkbox>
-                        </div>
-                        <div className="flex-auto mt-5">
-                            <label htmlFor="minmax" className="font-bold block mb-2">Draw text UPPER</label>
-                            <Checkbox onChange={e => setUseUpperText(e.checked)} checked={useUpperText}></Checkbox>
+                            <label htmlFor="minmax" className="font-bold block mb-2">Image retention in minutes</label>
+                            <InputNumber inputId="minmax" showButtons value={imageRetentionInMinutes} onValueChange={(e) => setImageRetentionInMinutes(e.value)} min={2} max={10080} />
                         </div>
                         <Divider />
                         <Button label="Submit" icon="pi pi-check" loading={isSavingConfiguration} onClick={saveConfiguration} />

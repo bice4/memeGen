@@ -5,11 +5,11 @@ namespace MemeGen.ConfigurationService;
 
 public static class Extensions
 {
-    public static void AddConfigurationService(this IHostApplicationBuilder builder)
+    public static void AddConfigurationService(this IHostApplicationBuilder builder, string connectionName = "configurations")
     {
-        builder.AddAzureTableServiceClient("configurations",
+        builder.AddAzureTableServiceClient(connectionName,
             configureSettings: settings => settings.DisableHealthChecks = true);
         
-        builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
+        builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
     }
 }

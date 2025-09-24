@@ -15,6 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\MemeGen.AzureTablesConfigurationService\MemeGen.AzureTablesConfigurationService.csproj" />
         <ProjectReference Include="..\MemeGen.Common\MemeGen.Common.csproj"/>
         <ProjectReference Include="..\MemeGen.Domain\MemeGen.Domain.csproj"/>
         <ProjectReference Include="..\MemeGen.MongoDbService\MemeGen.MongoDbService.csproj" />

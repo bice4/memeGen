@@ -6,7 +6,8 @@ namespace MemeGen.ClientApiService.Services;
 
 public interface IImageCache
 {
-    Task AddImageToCacheAsync(string[] keys, string blobName, CancellationToken cancellationToken);
+    Task AddImageToCacheAsync(string[] keys, string blobName, TimeSpan? expirationDate,
+        CancellationToken cancellationToken);
 
     Task<string?> GetImageFromCacheAsync(string[] keys, CancellationToken cancellationToken);
 
@@ -18,17 +19,22 @@ public class ImageCache(
     IConnectionMultiplexer mux
 ) : IImageCache
 {
-    private readonly TimeSpan _cacheExpirationTime = TimeSpan.FromHours(1);
+    private readonly TimeSpan _defaultCacheExpirationTime = TimeSpan.FromHours(1);
     private readonly Random _random = new();
     private string? _lastQuote;
-    
+
     private static string GetKeyByListOfParams(string[] keys) => string.Join("_", keys);
 
-    public async Task AddImageToCacheAsync(string[] keys, string blobName,
+    public async Task AddImageToCacheAsync(string[] keys, string blobName, TimeSpan? expirationDate,
         CancellationToken cancellationToken)
     {
+        if (expirationDate?.TotalMinutes < 1)
+        {
+            expirationDate = _defaultCacheExpirationTime;
+        }
+
         var redis = mux.GetDatabase();
-        await redis.StringSetAsync(GetKeyByListOfParams(keys), blobName, _cacheExpirationTime);
+        await redis.StringSetAsync(GetKeyByListOfParams(keys), blobName, expirationDate);
 
         logger.LogInformation("Image added to cache with quote {Quote} and {TemplateId}.", keys[0], keys[1]);
     }

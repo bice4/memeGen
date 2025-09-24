@@ -1,8 +1,7 @@
 ﻿using Azure;
 using Azure.Data.Tables;
-using MemeGen.Common.Constants;
 
-namespace MemeGen.Domain.Entities;
+namespace MemeGen.Domain.Entities.Configuration;
 
 public class ImageGenerationConfiguration : ITableEntity
 {
@@ -12,9 +11,10 @@ public class ImageGenerationConfiguration : ITableEntity
     private const int MaxBackgroundOpacity = 210;
     private const int MinBackgroundOpacity = 80;
 
-    public const int DefaultTextPadding = 28;
-    public const int DefaultBackgroundOpacity = 120;
-    public const bool DefaultTextAtTop = true;
+    private const int DefaultTextPadding = 28;
+    private const int DefaultBackgroundOpacity = 120;
+    private const bool DefaultTextAtTop = true;
+    private const bool DefaultUseUpperText = false;
 
     public const string DefaultRowKey = "ImageGenerationConfiguration";
 
@@ -23,8 +23,10 @@ public class ImageGenerationConfiguration : ITableEntity
     public bool TextAtTop { get;  set; }
 
     public int BackgroundOpacity { get; set; }
+    
+    public bool UseUpperText { get; set; } 
 
-    public string PartitionKey { get; set; } = AzureTablesConstants.DefaultPartitionKey;
+    public required string PartitionKey { get; set; }
 
     public string RowKey { get; set; } = DefaultRowKey;
 
@@ -32,7 +34,7 @@ public class ImageGenerationConfiguration : ITableEntity
 
     public ETag ETag { get; set; } = ETag.All;
 
-    public void Update(int textPadding, int backgroundOpacity, bool textAtTop)
+    public void Update(int textPadding, int backgroundOpacity, bool textAtTop, bool useUpperText)
     {
         if (backgroundOpacity is >= MinBackgroundOpacity and <= MaxBackgroundOpacity)
         {
@@ -45,17 +47,20 @@ public class ImageGenerationConfiguration : ITableEntity
         }
 
         TextAtTop = textAtTop;
+        UseUpperText = useUpperText;
     }
 
-    public static ImageGenerationConfiguration CreateDefault() => new()
+    public static ImageGenerationConfiguration CreateDefault(string partitionKey) => new()
     {
         TextPadding = DefaultTextPadding,
         BackgroundOpacity = DefaultBackgroundOpacity,
         TextAtTop = DefaultTextAtTop,
+        UseUpperText = DefaultUseUpperText,
+        PartitionKey = partitionKey
     };
     
     public string GetThumbprint()
     {
-        return $"{TextPadding}-{BackgroundOpacity}-{TextAtTop}";
+        return $"{TextPadding}-{BackgroundOpacity}-{TextAtTop}-{UseUpperText}";
     }
 }

@@ -38,6 +38,11 @@ public static class ImageTextDrawer
 
         var width = input.Width;
 
+        if (config.UseUpperText)
+        {
+            text = text.ToUpper();
+        }
+
         var fsMin = MinFontSize; // min FontSize
         var fsMax = MaxFontSize; // start max FontSize 
         var fontSize = fsMax;

@@ -8,9 +8,9 @@ import "primeicons/primeicons.css";
 import "primeflex/primeflex.css";
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <PrimeReactProvider>
       <App />
     </PrimeReactProvider>
-  </React.StrictMode>
+  // </React.StrictMode>
 )

@@ -6,4 +6,6 @@ public record QuoteShortDto(string Quote, int Id);
 
 public record TemplateShortDto(string Id, string Name, string Quotes, string PhotoTitle, int Usages);
 
-public record ImageGenerationConfigurationShortDto(float TextPadding, int BackgroundOpacity, bool TextAtTop);
+public record ImageGenerationConfigurationShortDto(float TextPadding, int BackgroundOpacity, bool TextAtTop, bool UseUpperText);
+
+public record ImageCachingConfigurationShortDto(int CacheDurationInMinutes, int ImageRetentionInMinutes);

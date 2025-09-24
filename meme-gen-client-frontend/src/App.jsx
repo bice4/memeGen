@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import './App.css';
 import Persons from './Persons';
 import ImageResult from './ImageResult';
+import { tr } from 'framer-motion/client';
 
 function App() {
   const [persons, setPersons] = useState([]);
   const [data, setData] = useState(null);
-  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [pollingInProcess, setPollingInProcess] = useState(false);
 
   const maxPollTries = 5;
@@ -23,7 +24,6 @@ function App() {
       .catch(error => console.error('Error fetching persons:', error));
   }
   useEffect(() => {
-    
     getPersons();
   }, []);
 
@@ -159,7 +159,7 @@ function App() {
 
   return (
     <div>
-      {persons.length === 0 && (
+      {(persons.length === 0 && !isInitialLoading) && (
         renderNoPersonFound()
       )}
 
