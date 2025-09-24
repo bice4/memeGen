@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 
+
 export default function MainHeader({ onSelectPerson, onCallToast, openConfiguration }) {
     const [persons, setPersons] = useState([]);
     const [selectedPerson, setSelectedPerson] = useState(null);
@@ -35,9 +36,10 @@ export default function MainHeader({ onSelectPerson, onCallToast, openConfigurat
     return (
         <>
             {!isSelected && (
-                <div className='flex align-items-center justify-content-center h-screen'>
+                <div className='flex flex-column align-items-center justify-content-center h-screen'>
+                    <div className='text-2xl'>Quote meme gen</div>
                     <Dropdown value={selectedPerson} onChange={(e) => selectPerson(e.value)} options={persons} optionLabel="name"
-                        placeholder="Select a person" className="w-full md:w-14rem" />
+                        placeholder="Select a person" className="w-full md:w-14rem w-4 mt-5" />
                 </div>
             )}
 

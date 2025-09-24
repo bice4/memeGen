@@ -14,10 +14,6 @@ var sqlserver = builder.AddSqlServer("sqlserver")
     .WithDataVolume()
     .WithLifetime(ContainerLifetime.Persistent);
 
-// var initScriptPath = Path.Join(Path.GetDirectoryName(typeof(Program).Assembly.Location), "init.sql");
-// var sqlMemeGenDb = sqlserver.AddDatabase("MemeGen")
-//     .WithCreationScript(File.ReadAllText(initScriptPath));
-
 var sqlMemeGenDb = sqlserver.AddDatabase("MemeGen");
 
 var mongo = builder.AddMongoDB("mongodb")

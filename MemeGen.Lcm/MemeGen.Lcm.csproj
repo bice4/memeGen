@@ -17,6 +17,7 @@
     <ItemGroup>
         <ProjectReference Include="..\MemeGen.Common\MemeGen.Common.csproj"/>
         <ProjectReference Include="..\MemeGen.Domain\MemeGen.Domain.csproj"/>
+        <ProjectReference Include="..\MemeGen.MongoDbService\MemeGen.MongoDbService.csproj" />
         <ProjectReference Include="..\MemeGen.ServiceDefaults\MemeGen.ServiceDefaults.csproj"/>
     </ItemGroup>
 </Project>

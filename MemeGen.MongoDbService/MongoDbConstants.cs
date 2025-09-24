@@ -1,4 +1,4 @@
-﻿namespace MemeGen.Common.Constants;
+﻿namespace MemeGen.MongoDbService;
 
 public static class MongoDbConstants
 {

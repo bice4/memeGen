@@ -1,11 +1,11 @@
 ﻿using Azure.Storage.Blobs;
 using MemeGen.ApiService.Persistent;
-using MemeGen.ApiService.Persistent.MongoDb;
 using MemeGen.ApiService.Translators;
 using MemeGen.Common.Constants;
 using MemeGen.Common.Exceptions;
 using MemeGen.Contracts.Http.v1.Requests;
 using MemeGen.Domain.Entities;
+using MemeGen.MongoDbService.Repositories;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
 using InvalidDataException = MemeGen.Common.Exceptions.InvalidDataException;
@@ -22,14 +22,14 @@ public interface ITemplateService
 
     Task DeleteByIdAsync(ObjectId id, CancellationToken cancellationToken);
 
-    Task<Template> GetByIdAsync(ObjectId id, CancellationToken cancellationToken);
+    Task<Template?> GetByIdAsync(ObjectId id, CancellationToken cancellationToken);
 
     Task<List<string>> GetAllImageContentAsync(int personId, CancellationToken cancellationToken);
 }
 
 public class TemplateService(
     ILogger<TemplateService> logger,
-    ITemplateRepository repository,
+    ITemplateRepository templateRepository,
     AppDbContext appDbContext,
     IImageGenerationRepository imageGenerationRepository,
     BlobServiceClient blobServiceClient)
@@ -54,25 +54,25 @@ public class TemplateService(
 
         var template = createTemplateRequest.ToDomain(photo.BlobFileName);
 
-        await repository.CreateAsync(template, cancellationToken);
+        await templateRepository.CreateAsync(template, cancellationToken);
 
         logger.LogInformation("Template {Id} has been created.", template.Id);
     }
 
     public Task<List<Template>> GetAllAsync(CancellationToken cancellationToken)
-        => repository.GetAllAsync(cancellationToken);
+        => templateRepository.GetAllAsync(cancellationToken);
 
     public Task<List<Template>> GetAllByPersonIdAsync(int personId, CancellationToken cancellationToken)
-        => repository.GetByPersonIdAsync(personId, cancellationToken);
+        => templateRepository.GetByPersonIdAsync(personId, cancellationToken);
 
     public async Task DeleteByIdAsync(ObjectId id, CancellationToken cancellationToken)
     {
-        await repository.DeleteAsync(id, cancellationToken);
+        await templateRepository.DeleteAsync(id, cancellationToken);
         logger.LogInformation("Template {Id} has been deleted.", id);
     }
 
-    public Task<Template> GetByIdAsync(ObjectId id, CancellationToken cancellationToken)
-        => repository.GetByIdAsync(id, cancellationToken);
+    public Task<Template?> GetByIdAsync(ObjectId id, CancellationToken cancellationToken)
+        => templateRepository.GetByIdAsync(id, cancellationToken);
 
     public async Task<List<string>> GetAllImageContentAsync(int personId, CancellationToken cancellationToken)
     {

@@ -20,7 +20,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemeGen.Lcm", "MemeGen.Lcm\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemeGen.Playground", "MemeGen.Playground\MemeGen.Playground.csproj", "{D07F4E77-7508-4830-A6E4-69E34E8EA18C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemeGen.ConfigurationService", "MemeGen.ConfigurationService\MemeGen.ConfigurationService.csproj", "{208A6381-F07D-4A58-806B-E08CA9DBD866}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemeGen.AzureTablesConfigurationService", "MemeGen.AzureTablesConfigurationService\MemeGen.AzureTablesConfigurationService.csproj", "{208A6381-F07D-4A58-806B-E08CA9DBD866}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemeGen.MongoDbService", "MemeGen.MongoDbService\MemeGen.MongoDbService.csproj", "{0B4F2BF6-9DFA-4AD6-9719-140F8BAB3002}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -72,6 +74,10 @@ Global
 		{208A6381-F07D-4A58-806B-E08CA9DBD866}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{208A6381-F07D-4A58-806B-E08CA9DBD866}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{208A6381-F07D-4A58-806B-E08CA9DBD866}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B4F2BF6-9DFA-4AD6-9719-140F8BAB3002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B4F2BF6-9DFA-4AD6-9719-140F8BAB3002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B4F2BF6-9DFA-4AD6-9719-140F8BAB3002}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B4F2BF6-9DFA-4AD6-9719-140F8BAB3002}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection

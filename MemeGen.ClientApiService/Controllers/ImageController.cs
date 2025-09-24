@@ -1,7 +1,7 @@
-using MemeGen.ClientApiService.Persistent.MongoDb;
 using MemeGen.ClientApiService.Services;
 using MemeGen.Common.Exceptions;
 using MemeGen.Common.Services;
+using MemeGen.MongoDbService.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MemeGen.ClientApiService.Controllers;

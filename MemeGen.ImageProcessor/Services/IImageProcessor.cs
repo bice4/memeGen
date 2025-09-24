@@ -4,7 +4,7 @@ using Azure.Storage.Blobs.Models;
 using MemeGen.Common.Constants;
 using MemeGen.Contracts.Messaging.V1.Requests;
 using MemeGen.Domain.Entities;
-using MemeGen.ImageProcessor.Persistent.MongoDb;
+using MemeGen.MongoDbService.Repositories;
 using MongoDB.Bson;
 
 namespace MemeGen.ImageProcessor.Services;

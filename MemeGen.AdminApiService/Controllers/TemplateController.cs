@@ -64,7 +64,10 @@ public class TemplateController(
             }
 
             var template = await templateService.GetByIdAsync(objectId, cancellationToken);
-            return Ok(template);
+
+            return template == null 
+                ? NotFound("Template not found") 
+                : Ok(template);
         }
         catch (DomainException e)
         {

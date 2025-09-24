@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using Azure.Storage.Blobs;
 using MemeGen.ClientApiService.Models;
-using MemeGen.ClientApiService.Persistent.MongoDb;
 using MemeGen.ClientApiService.Translators;
 using MemeGen.Common.Constants;
 using MemeGen.Common.Exceptions;
@@ -9,6 +8,7 @@ using MemeGen.ConfigurationService;
 using MemeGen.Contracts.Messaging.V1;
 using MemeGen.Contracts.Messaging.V1.Requests;
 using MemeGen.Domain.Entities;
+using MemeGen.MongoDbService.Repositories;
 using RabbitMQ.Client;
 
 namespace MemeGen.ClientApiService.Services;

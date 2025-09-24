@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using Azure.Storage.Blobs;
 using MemeGen.Common.Constants;
-using MemeGen.Lcm.Persistent.MongoDb;
+using MemeGen.MongoDbService.Repositories;
 using StackExchange.Redis;
 
 namespace MemeGen.Lcm.Services;

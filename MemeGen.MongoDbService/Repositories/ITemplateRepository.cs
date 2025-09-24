@@ -1,22 +1,54 @@
-﻿using MemeGen.ClientApiService.Models;
-using MemeGen.Common.Constants;
-using MemeGen.Domain.Entities;
+﻿using MemeGen.Domain.Entities;
+using MemeGen.MongoDbService.Models;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace MemeGen.ClientApiService.Persistent.MongoDb;
+namespace MemeGen.MongoDbService.Repositories;
 
 public interface ITemplateRepository
 {
     Task<List<Template>> GetByPersonIdAsync(int personId, CancellationToken cancellationToken);
 
     Task<List<TemplatePerson>> GetPersonsFromTemplatesAsync(CancellationToken cancellationToken);
-    
+
     Task IncreaseTemplateUsageAsync(ObjectId templateId, CancellationToken cancellationToken);
+
+    Task<Template?> GetByIdAsync(ObjectId id, CancellationToken cancellationToken);
+
+    Task CreateAsync(Template template, CancellationToken cancellationToken);
+
+    Task<List<Template>> GetAllAsync(CancellationToken cancellationToken);
+
+    Task DeleteAsync(ObjectId id, CancellationToken cancellationToken);
 }
 
 public class TemplateRepository(IMongoClient client) : ITemplateRepository
 {
+    public async Task CreateAsync(Template template, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection();
+        await collection.InsertOneAsync(template, cancellationToken: cancellationToken);
+    }
+
+    public Task<List<Template>> GetAllAsync(CancellationToken cancellationToken)
+    {
+        var collection = GetCollection();
+        return collection.Find(template => true).ToListAsync(cancellationToken: cancellationToken);
+    }
+    
+    public Task DeleteAsync(ObjectId id, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection();
+        return collection.DeleteOneAsync(template => template.Id == id, cancellationToken: cancellationToken);
+    }
+
+    public Task<Template?> GetByIdAsync(ObjectId id, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection();
+        return collection.Find(template => template.Id == id)
+            .FirstOrDefaultAsync(cancellationToken: cancellationToken)!;
+    }
+
     public Task<List<Template>> GetByPersonIdAsync(int personId, CancellationToken cancellationToken)
     {
         var collection = GetCollection();
@@ -30,7 +62,7 @@ public class TemplateRepository(IMongoClient client) : ITemplateRepository
         var templates = await collection.Find(template => true).ToListAsync(cancellationToken: cancellationToken);
 
         return templates.GroupBy(x => x.PersonId)
-            .Select(g 
+            .Select(g
                 => new TemplatePerson(g.Key, g.First().PersonName))
             .ToList();
     }
