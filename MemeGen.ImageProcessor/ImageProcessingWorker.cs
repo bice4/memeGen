@@ -18,7 +18,6 @@ public class ImageProcessingWorker(ILogger<ImageProcessingWorker> logger, IConne
         _channel.QueueDeclare(MessagingContractConstants.ContentProcessingQueueName, durable: true, exclusive: false,
             autoDelete: false);
 
-        
         logger.LogInformation("Image processing requests processing starting... ");
 
         return base.StartAsync(cancellationToken);
