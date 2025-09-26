@@ -13,18 +13,18 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.9" />
-        <PackageReference Include="Aspire.StackExchange.Redis" Version="*" />
         <PackageReference Include="Aspire.RabbitMQ.Client" Version="*"/>
-        <PackageReference Include="Aspire.Azure.Storage.Blobs" Version="*" />
 
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\MemeGen.AzureBlobServices\MemeGen.AzureBlobServices.csproj" />
       <ProjectReference Include="..\MemeGen.Common\MemeGen.Common.csproj" />
       <ProjectReference Include="..\MemeGen.AzureTablesConfigurationService\MemeGen.AzureTablesConfigurationService.csproj" />
       <ProjectReference Include="..\MemeGen.Contracts\MemeGen.Contracts.csproj" />
       <ProjectReference Include="..\MemeGen.Domain\MemeGen.Domain.csproj" />
       <ProjectReference Include="..\MemeGen.MongoDbService\MemeGen.MongoDbService.csproj" />
+      <ProjectReference Include="..\MemeGen.RedisService\MemeGen.RedisService.csproj" />
       <ProjectReference Include="..\MemeGen.ServiceDefaults\MemeGen.ServiceDefaults.csproj" />
     </ItemGroup>
 

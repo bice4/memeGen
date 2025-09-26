@@ -1,10 +1,9 @@
 ﻿using System.Diagnostics;
-using Azure.Storage.Blobs;
-using MemeGen.Common.Constants;
+using MemeGen.AzureBlobServices;
 using MemeGen.ConfigurationService;
 using MemeGen.Domain.Entities.Configuration;
 using MemeGen.MongoDbService.Repositories;
-using StackExchange.Redis;
+using MemeGen.RedisService;
 
 namespace MemeGen.Lcm.Services;
 
@@ -24,8 +23,8 @@ public interface ILcmService
 /// <inheritdoc/>
 public class LcmService(
     ILogger<LcmService> logger,
-    BlobServiceClient blobServiceClient,
-    IConnectionMultiplexer mux,
+    IAzureBlobService azureBlobService,
+    IRedisRepository redisRepository,
     IImageGenerationRepository imageGenerationRepository,
     IConfigurationService configurationService) : ILcmService
 {
@@ -36,7 +35,7 @@ public class LcmService(
     public async Task CleanAsync(CancellationToken cancellationToken)
     {
         var st = Stopwatch.StartNew();
-        
+
         logger.LogInformation("Cleaning up storage...");
 
         // Get all image generation results
@@ -51,10 +50,6 @@ public class LcmService(
             ? _defaultImageRetentionInMinutes
             : TimeSpan.FromMinutes(imageCachingConfiguration.ImageRetentionInMinutes);
 
-        // Initialize Blob container client and Redis database
-        var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
-        var redis = mux.GetDatabase();
-
         // Identify expired generation results based on retention policy
         var expiredGenerationResults = generationResults.Where(generationResult =>
             generationResult.UpdatedAt.Add(retention) < DateTime.UtcNow).ToList();
@@ -68,24 +63,30 @@ public class LcmService(
                 // Check if the image is still cached in Redis
                 // If not cached, delete the blob and the database record
                 // If cached, skip deletion
-                var redisValue = await redis.StringGetAsync($"{generationResult.TemplateId}_{generationResult.Quote}");
-                if (redisValue.IsNullOrEmpty)
+                var key = generationResult.KeyFromImageGeneration();
+                var redisValue = await redisRepository.GetValueAsync(key);
+                if (string.IsNullOrWhiteSpace(redisValue))
                 {
-                    var blobClient = blobContainerClient.GetBlobClient(generationResult.BlobFileName);
-                    await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+                    // If blob file name is present, delete the blob from Azure Blob Storage
+                    if (!string.IsNullOrWhiteSpace(generationResult.BlobFileName))
+                    {
+                        await azureBlobService.DeleteIfExistsAsync(generationResult.BlobFileName, cancellationToken);
+                    }
+
                     await imageGenerationRepository.DeleteAsync(generationResult, cancellationToken);
-                    logger.LogInformation("Deleted {GenerationResultTemplateId}_{GenerationResultQuote}",
+                    logger.LogInformation("Deleted {GenerationResultTemplateId} {GenerationResultQuote}",
                         generationResult.TemplateId, generationResult.Quote);
                 }
                 else
                 {
-                    logger.LogInformation("Redis value found for {GenerationResultTemplateId}_{GenerationResultQuote}",
-                        generationResult.TemplateId, generationResult.Quote);
+                    logger.LogInformation(
+                        "Redis value found for {Key} exists, skipping deletion of {GenerationResultTemplateId} {GenerationResultQuote}",
+                        key, generationResult.TemplateId, generationResult.Quote);
                 }
             }
             catch (Exception e)
             {
-                logger.LogError(e, "Failed to delete image file {blobName} with generation id {GenerationId}",
+                logger.LogError(e, "Failed to delete image file {BlobName} with generation id {GenerationId}",
                     generationResult.BlobFileName, generationResult.Id);
             }
         }

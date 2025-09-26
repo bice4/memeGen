@@ -1,18 +1,19 @@
+using MemeGen.AzureBlobServices;
 using MemeGen.ImageProcessor;
 using MemeGen.ImageProcessor.Services;
 using MemeGen.MongoDbService;
 using MemeGen.ServiceDefaults;
 
-
 var builder = Host.CreateApplicationBuilder(args);
-builder.AddMongoDbServices();
-builder.Services.AddHostedService<ImageProcessorWorker>();
-builder.Services.AddSingleton<IImageProcessor, ImageProcessor>();
 
+builder.AddMongoDbServices();
 builder.AddServiceDefaults();
+builder.AddAzureBlobServices();
 
 builder.AddRabbitMQClient(connectionName: "rabbitmq");
-builder.AddAzureBlobServiceClient("photocontainer");
+
+builder.Services.AddHostedService<ImageProcessorWorker>();
+builder.Services.AddSingleton<IImageProcessor, ImageProcessor>();
 
 ImageTextDrawer.Init();
 

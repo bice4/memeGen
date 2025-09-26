@@ -1,6 +1,5 @@
-﻿using Azure.Storage.Blobs;
-using MemeGen.ApiService.Persistent;
-using MemeGen.Common.Constants;
+﻿using MemeGen.ApiService.Persistent;
+using MemeGen.AzureBlobServices;
 using MemeGen.Common.Exceptions;
 using MemeGen.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -40,7 +39,7 @@ public interface IPhotoService
     /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
     /// <returns>base64 encoded <see cref="string"/> content of the photo</returns>
     /// <exception cref="NotFoundException">thrown if the photo does not exist</exception>
-    Task<string> GetPhotoItemContentBase64Async(int photoId, CancellationToken cancellationToken);
+    Task<string> GetPhotoContentByIdInBase64Async(int photoId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves all photo entries from the database.
@@ -62,7 +61,7 @@ public interface IPhotoService
 public class PhotoService(
     ILogger<PhotoService> logger,
     AppDbContext appDbContext,
-    BlobServiceClient blobServiceClient)
+    IAzureBlobService azureBlobService)
     : IPhotoService
 {
     /// <inheritdoc />
@@ -78,17 +77,12 @@ public class PhotoService(
         if (!personExists)
             throw new NotFoundException("Person", personId.ToString());
 
-
-        var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
-        await blobContainerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
         var blobName = Guid.NewGuid().ToString("N");
 
         await using var transaction = await appDbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            var blobClient = blobContainerClient.GetBlobClient(blobName);
-            var contentBytes = Convert.FromBase64String(contentBase64);
-            await blobClient.UploadAsync(new BinaryData(contentBytes), cancellationToken);
+            await azureBlobService.UploadContentInBase64Async(blobName, contentBase64, cancellationToken);
 
             var photo = new Photo(title, blobName, personId);
 
@@ -116,14 +110,12 @@ public class PhotoService(
         if (photo == null)
             throw new NotFoundException("Photo", photoId.ToString());
 
-        var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
-        var blob = blobContainerClient.GetBlobClient(photo.BlobFileName);
 
         await using var transaction = await appDbContext.Database.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            await blob.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+            await azureBlobService.DeleteIfExistsAsync(photo.BlobFileName, cancellationToken);
 
             appDbContext.Photos.Remove(photo);
             await appDbContext.SaveChangesAsync(cancellationToken);
@@ -141,22 +133,16 @@ public class PhotoService(
     }
 
     /// <inheritdoc />
-    public async Task<string> GetPhotoItemContentBase64Async(int photoId, CancellationToken cancellationToken)
+    public async Task<string> GetPhotoContentByIdInBase64Async(int photoId, CancellationToken cancellationToken)
     {
         var photo = await appDbContext.Photos.FirstOrDefaultAsync(x => x.Id == photoId, cancellationToken);
-
         if (photo == null)
             throw new NotFoundException("Photo", photoId.ToString());
 
-        var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
-        var blob = blobContainerClient.GetBlobClient(photo.BlobFileName);
-
-        var blobContent = await blob.DownloadContentAsync(cancellationToken);
-        if (!blobContent.HasValue)
-            throw new NotFoundException("Photo", photoId.ToString());
-
-        var contentBinary = blobContent.Value.Content;
-        return Convert.ToBase64String(contentBinary);
+        var base64Content = await azureBlobService.GetContentInBase64Async(photo.BlobFileName, cancellationToken);
+        return string.IsNullOrWhiteSpace(base64Content)
+            ? throw new BlobNotFoundException(photo.BlobFileName)
+            : base64Content;
     }
 
     /// <inheritdoc />

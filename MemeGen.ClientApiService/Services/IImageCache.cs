@@ -1,6 +1,6 @@
 ﻿using MemeGen.ClientApiService.Models;
 using MemeGen.Domain.Entities;
-using StackExchange.Redis;
+using MemeGen.RedisService;
 
 namespace MemeGen.ClientApiService.Services;
 
@@ -12,11 +12,10 @@ public interface IImageCache
     /// <summary>
     /// Adds an image to the Redis cache with a specified expiration time.
     /// </summary>
-    /// <param name="keys">Array of strings used to create a unique cache key.</param>
-    /// <param name="blobName">Name of the blob to be cached.</param>
+    /// <param name="imageGeneration"><see cref="ImageGeneration"/> object containing image details to be cached.</param>
     /// <param name="expirationDate">Optional expiration time for the cache entry. If null or less than 1 minute, a default of 1 hour is used.</param>
     /// <returns></returns>
-    Task AddImageToRedisCache(string[] keys, string blobName, TimeSpan? expirationDate);
+    Task AddImageToRedisCache(ImageGeneration imageGeneration, TimeSpan? expirationDate);
 
     /// <summary>
     /// Gets an image from the Redis cache based on the provided keys.
@@ -35,18 +34,15 @@ public interface IImageCache
 
 /// <inheritdoc/>
 public class ImageCache(
-    ILogger<ImageCache> logger,
-    IConnectionMultiplexer mux
+    IRedisRepository redisRepository
 ) : IImageCache
 {
     private readonly TimeSpan _defaultCacheExpirationTime = TimeSpan.FromHours(1);
     private readonly Random _random = new();
     private string? _lastQuote;
-
-    private static string GetKeyByListOfParams(string[] keys) => string.Join("_", keys);
-
+    
     /// <inheritdoc/>
-    public async Task AddImageToRedisCache(string[] keys, string blobName, TimeSpan? expirationDate)
+    public async Task AddImageToRedisCache(ImageGeneration imageGeneration, TimeSpan? expirationDate)
     {
         // Ensure expirationDate is at least 1 minute, otherwise use default
         if (expirationDate?.TotalMinutes < 1)
@@ -54,23 +50,13 @@ public class ImageCache(
             expirationDate = _defaultCacheExpirationTime;
         }
 
-        var redis = mux.GetDatabase();
-        await redis.StringSetAsync(GetKeyByListOfParams(keys), blobName, expirationDate);
-
-        logger.LogInformation("Image added to cache with quote {Quote} and {TemplateId}.", keys[0], keys[1]);
+        await redisRepository.SetValueAsync(imageGeneration.KeyFromImageGeneration(), imageGeneration.BlobFileName!,
+            expirationDate);
     }
 
     /// <inheritdoc/>
-    public async Task<string?> GetImageFromRedisCache(string[] keys)
-    {
-        var redis = mux.GetDatabase();
+    public Task<string?> GetImageFromRedisCache(string[] keys) => redisRepository.GetValueAsync(keys);
 
-        var redisValue = await redis.StringGetAsync(GetKeyByListOfParams(keys));
-        if (redisValue.IsNullOrEmpty) return null!;
-
-        return redisValue;
-    }
-    
     /// <inheritdoc/>
     public RandomTemplateAndQuote GetRandomTemplateAndQuote(List<Template> personTemplates)
     {

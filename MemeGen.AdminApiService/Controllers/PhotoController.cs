@@ -51,11 +51,11 @@ public class PhotoController(
     }
     
     [HttpGet("content/{id:int}")]
-    public async Task<IActionResult> GetContentById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPhotoContentById(int id, CancellationToken cancellationToken)
     {
         try
         {
-            var photoItemContentBase64 = await photoService.GetPhotoItemContentBase64Async(id, cancellationToken);
+            var photoItemContentBase64 = await photoService.GetPhotoContentByIdInBase64Async(id, cancellationToken);
             return Ok(photoItemContentBase64);
         }
         catch (DomainException e)

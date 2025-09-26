@@ -114,6 +114,7 @@ export default function Photos({ selectedPerson, onCallToast, onCallCreateTempla
 
         reader.onloadend = () => {
             setNewPhotoBase64(reader.result.split(",")[1]);
+            setNewPhotoTitle(file.name);
         };
 
         reader.readAsDataURL(file);
@@ -169,6 +170,7 @@ export default function Photos({ selectedPerson, onCallToast, onCallCreateTempla
 
     const onTemplateClear = () => {
         setNewPhotoBase64('');
+        setNewPhotoTitle('');
     };
 
     const emptyTemplate = () => {

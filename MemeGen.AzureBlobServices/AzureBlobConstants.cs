@@ -1,4 +1,4 @@
-﻿namespace MemeGen.Common.Constants;
+﻿namespace MemeGen.AzureBlobServices;
 
 public static class AzureBlobConstants
 {

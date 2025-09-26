@@ -1,13 +1,12 @@
-﻿using Azure.Storage.Blobs;
-using MemeGen.ApiService.Persistent;
+﻿using MemeGen.ApiService.Persistent;
 using MemeGen.ApiService.Translators;
-using MemeGen.Common.Constants;
+using MemeGen.AzureBlobServices;
 using MemeGen.Common.Exceptions;
 using MemeGen.Contracts.Http.v1.Models;
 using MemeGen.MongoDbService.Repositories;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
-using InvalidDataException = System.IO.InvalidDataException;
+using InvalidDataException = MemeGen.Common.Exceptions.InvalidDataException;
 
 namespace MemeGen.ApiService.Services;
 
@@ -24,6 +23,7 @@ public interface ITemplateUpdateService
     /// <param name="cancellationToken">><see cref="CancellationToken"/></param>
     /// <exception cref="NotFoundException"> thrown if the template does not exist</exception>
     /// <exception cref="InvalidDataException"> thrown if the template ID format is invalid</exception>
+    /// <exception cref="BlobNotFoundException"> thrown if the associated photo blob does not exist</exception>
     /// <returns><see cref="TemplateUpdateInformation"/> containing template details and available quotes</returns>
     Task<TemplateUpdateInformation> GetUpdateInformationAsync(string templateId, CancellationToken cancellationToken);
 
@@ -34,6 +34,7 @@ public interface ITemplateUpdateService
     /// <param name="personId"><see cref="int"/> id of the associated person</param>
     /// <param name="cancellationToken">><see cref="CancellationToken"/></param>
     /// <exception cref="NotFoundException"> thrown if the associated person or photo does not exist</exception>
+    /// <exception cref="BlobNotFoundException"> thrown if the associated photo blob does not exist</exception>
     /// <returns><see cref="TemplateCreateInformation"/> containing available quotes and photo details</returns>
     Task<TemplateCreateInformation> GetCreateInformationAsync(int photoId, int personId,
         CancellationToken cancellationToken);
@@ -43,7 +44,7 @@ public interface ITemplateUpdateService
 public class TemplateUpdateService(
     ITemplateRepository templateRepository,
     AppDbContext appDbContext,
-    BlobServiceClient blobServiceClient) : ITemplateUpdateService
+    IAzureBlobService azureBlobService) : ITemplateUpdateService
 {
     /// <inheritdoc />
     public async Task<TemplateUpdateInformation> GetUpdateInformationAsync(string templateId,
@@ -79,7 +80,11 @@ public class TemplateUpdateService(
             i++;
         }
 
-        var base64Image = await GetBlobImageBase64(template.PhotoBlobFileName, cancellationToken);
+        var base64Image = await azureBlobService.GetContentInBase64Async(template.PhotoBlobFileName,
+            cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(base64Image))
+            throw new BlobNotFoundException(template.PhotoBlobFileName);
 
         return new TemplateUpdateInformation(templateId, template.Name,
             templateQuotesDtos,
@@ -112,25 +117,10 @@ public class TemplateUpdateService(
 
         // Get the base64 representation of the photo from Azure Blob Storage
         // If the blob does not exist or has no content, appropriate exceptions will be thrown
-        var base64Image = await GetBlobImageBase64(photo.BlobFileName, cancellationToken);
+        var base64Image = await azureBlobService.GetContentInBase64Async(photo.BlobFileName, cancellationToken);
 
-        return new TemplateCreateInformation(quotes.Select(x => x.ToShortDto()), photo.Title, base64Image);
-    }
-
-    private async Task<string> GetBlobImageBase64(string blobName, CancellationToken cancellationToken)
-    {
-        var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
-        var blobClient = blobContainerClient.GetBlobClient(blobName);
-        var exists = await blobClient.ExistsAsync(cancellationToken);
-        if (!exists)
-            throw new BlobNotFoundException(blobName);
-
-        var blobContent = await blobClient.DownloadContentAsync(cancellationToken);
-        if (!blobContent.HasValue)
-            throw new BlobHasNoContentException(blobName);
-
-        var contentBinary = blobContent.Value.Content;
-        var base64Image = Convert.ToBase64String(contentBinary);
-        return base64Image;
+        return string.IsNullOrWhiteSpace(base64Image)
+            ? throw new BlobNotFoundException(photo.BlobFileName)
+            : new TemplateCreateInformation(quotes.Select(x => x.ToShortDto()), photo.Title, base64Image);
     }
 }

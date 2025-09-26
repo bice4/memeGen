@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aspire.StackExchange.Redis" Version="9.4.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\MemeGen.Common\MemeGen.Common.csproj" />
+      <ProjectReference Include="..\MemeGen.Domain\MemeGen.Domain.csproj" />
+    </ItemGroup>
+    
+</Project>

@@ -40,7 +40,7 @@ public class TemplateController(
         try
         {
             var allImageContentByPersonIdAsync =
-                await templateService.GetAllImageContentAsync(personId, cancellationToken);
+                await templateService.GetAllPhotoContentAsync(personId, cancellationToken);
             return Ok(allImageContentByPersonIdAsync);
         }
         catch (DomainException e)

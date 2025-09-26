@@ -1,7 +1,7 @@
 ﻿using Azure.Storage.Blobs;
 using MemeGen.ApiService.Persistent;
 using MemeGen.ApiService.Translators;
-using MemeGen.Common.Constants;
+using MemeGen.AzureBlobServices;
 using MemeGen.Common.Exceptions;
 using MemeGen.Contracts.Http.v1.Requests;
 using MemeGen.Domain.Entities;
@@ -74,7 +74,7 @@ public interface ITemplateService
     /// <param name="personId">><see cref="int"/> id of the associated person</param>
     /// <param name="cancellationToken">><see cref="CancellationToken"/></param>
     /// <returns>list of Base64 encoded <see cref="string"/> image contents</returns>
-    Task<List<string>> GetAllImageContentAsync(int personId, CancellationToken cancellationToken);
+    Task<List<string>> GetAllPhotoContentAsync(int personId, CancellationToken cancellationToken);
 }
 
 /// <inheritdoc cref="ITemplateService"/>
@@ -83,7 +83,7 @@ public class TemplateService(
     ITemplateRepository templateRepository,
     AppDbContext appDbContext,
     IImageGenerationRepository imageGenerationRepository,
-    BlobServiceClient blobServiceClient)
+    IAzureBlobService azureBlobService)
     : ITemplateService
 {
     /// <inheritdoc />
@@ -151,17 +151,16 @@ public class TemplateService(
         => templateRepository.GetByIdAsync(id, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<List<string>> GetAllImageContentAsync(int personId, CancellationToken cancellationToken)
+    public async Task<List<string>> GetAllPhotoContentAsync(int personId, CancellationToken cancellationToken)
     {
-        var allResults = await imageGenerationRepository.GetByPersonIdAsync(personId, cancellationToken);
+        var allResults = await imageGenerationRepository.GetBlobNamesByPersonIdAsync(personId, cancellationToken);
         var notNullResults = allResults.Where(x => x != null).ToList();
 
         var base64Images = new List<string>(notNullResults.Count);
-        var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
 
         foreach (var result in notNullResults)
         {
-            var base64Image = await GetImageContentBase64Async(result!, blobContainerClient, cancellationToken);
+            var base64Image = await azureBlobService.GetContentInBase64Async(result!, cancellationToken);
             if (base64Image != null)
                 base64Images.Add(base64Image);
         }
