@@ -2,7 +2,7 @@
 
 public class AlreadyExistsException : DomainException
 {
-    public AlreadyExistsException(string entityName, int? entityId)
+    public AlreadyExistsException(string entityName, string? entityId)
     {
         EntityName = entityName;
         EntityId = entityId;
@@ -10,7 +10,7 @@ public class AlreadyExistsException : DomainException
     }
 
     private string EntityName { get; }
-    private int? EntityId { get; }
+    private string? EntityId { get; }
     
     public override string ToResponseMessage() => $"{EntityName} already exists. Id: {EntityId}";
 }

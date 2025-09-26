@@ -14,14 +14,31 @@ using RabbitMQ.Client;
 
 namespace MemeGen.ClientApiService.Services;
 
+/// <summary>
+/// Service for managing image generation requests and retrievals. Responsible for creating image generation tasks and fetching their results.
+/// </summary>
 public interface IImageService
 {
+    /// <summary>
+    /// Creates an image for a person by selecting a random template and quote, then initiating the image generation process.
+    /// </summary>
+    /// <param name="personId"><see cref="int"/> id of the person</param>
+    /// <param name="cancellationToken">><see cref="CancellationToken"/></param>
+    /// <returns>><see cref="PersonImage"/> containing correlationId and image status</returns>
+    /// <exception cref="NotFoundException"> thrown if the person has no templates or if the configuration is missing</exception>
     Task<PersonImage> CreateImageForPerson(int personId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Gets the status and result of an image generation process by its correlation ID.
+    /// </summary>
+    /// <param name="correlationId">><see cref="string"/> correlation ID of the image generation process</param>
+    /// <param name="cancellationToken">><see cref="CancellationToken"/></param>
+    /// <returns>><see cref="ImageGenerationResult"/> containing status, correlationId, additional message, and base64 image content if completed</returns>
     Task<ImageGenerationResult> GetImageForPersonByCorrelationId(string correlationId,
         CancellationToken cancellationToken);
 }
 
+/// <inheritdoc/>
 public class ImageService(
     ILogger<ImageService> logger,
     ITemplateRepository templateRepository,
@@ -31,12 +48,13 @@ public class ImageService(
     BlobServiceClient blobServiceClient,
     IConfigurationService configurationService) : IImageService
 {
+    /// <inheritdoc/>
     public async Task<PersonImage> CreateImageForPerson(int personId, CancellationToken cancellationToken)
     {
         // Check if a person has templates
         var personTemplates = await templateRepository.GetByPersonIdAsync(personId, cancellationToken);
         if (personTemplates == null || personTemplates.Count == 0)
-            throw new NotFoundException("Template", personId);
+            throw new NotFoundException("Template for the person", personId.ToString());
 
         // Create correlationId will be used for polling and link between services
         var correlationId = Guid.NewGuid().ToString("N");
@@ -44,17 +62,20 @@ public class ImageService(
         // Select a random template and quote
         var (randomTemplate, randomQuote) = imageCache.GetRandomTemplateAndQuote(personTemplates);
 
+        // Get image generation configuration
+        // If configuration is missing, throw an exception
         var imageGenerationConfiguration =
             await configurationService.GetConfigurationAsync<ImageGenerationConfiguration>(
                 ImageGenerationConfiguration.DefaultRowKey, cancellationToken);
 
         if (imageGenerationConfiguration == null)
-            throw new NotFoundException("Configuration", 0);
+            throw new NotFoundException("Configuration", ImageGenerationConfiguration.DefaultRowKey);
 
+        // Check Redis cache for existing image with the same template, quote, and configuration
+        // If found, return the cached image
         var cachedImage =
-            await imageCache.GetImageFromCacheAsync(
-                [randomTemplate.Id.ToString(), randomQuote, imageGenerationConfiguration.GetThumbprint()],
-                cancellationToken);
+            await imageCache.GetImageFromRedisCache(
+                [randomTemplate.Id.ToString(), randomQuote, imageGenerationConfiguration.GetThumbprint()]);
 
         if (cachedImage != null)
         {
@@ -97,10 +118,11 @@ public class ImageService(
         return new PersonImage(correlationId, false);
     }
 
+    /// <inheritdoc/>
     public async Task<ImageGenerationResult> GetImageForPersonByCorrelationId(string correlationId,
         CancellationToken cancellationToken)
     {
-        // Check if correlationId exists in MongoDb
+        // Check if correlationId exists in MongoDb and get the image generation record
         ImageGeneration? imageGeneration;
         try
         {
@@ -120,6 +142,9 @@ public class ImageService(
             return new ImageGenerationResult(imageGeneration!.Status, imageGeneration.CorrelationId,
                 imageGeneration.AdditionalMessage);
 
+        // Get image content from Blob storage and convert to Base64
+        // If fails, return an error message
+        // If succeeds, cache the image in Redis and return the Base64 content
         var blobResult = await GetImageFromBlob(imageGeneration.BlobFileName, cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(blobResult.errorMessage))
@@ -127,6 +152,9 @@ public class ImageService(
             return new ImageGenerationResult(ImageGenerationStatus.Failed, correlationId, blobResult.errorMessage);
         }
 
+        // Cache the image in Redis
+        // Get image caching configuration for cache duration
+        // If configuration is missing, use default cache duration of 120 minutes
         var imageCachingConfiguration =
             await configurationService.GetConfigurationAsync<ImageCachingConfiguration>(
                 ImageCachingConfiguration.DefaultRowKey, cancellationToken);
@@ -136,14 +164,14 @@ public class ImageService(
         if (imageCachingConfiguration != null)
             expiration = TimeSpan.FromMinutes(imageCachingConfiguration.CacheDurationInMinutes);
 
-        await imageCache.AddImageToCacheAsync(
+        await imageCache.AddImageToRedisCache(
             [imageGeneration.TemplateId, imageGeneration.Quote, imageGeneration.ConfigurationThumbprint],
-            imageGeneration.BlobFileName, expiration, cancellationToken);
+            imageGeneration.BlobFileName, expiration);
 
         return new ImageGenerationResult(ImageGenerationStatus.Completed, correlationId,
             imageGeneration.AdditionalMessage, blobResult.base64Content);
     }
-
+    
     private async Task<(string? base64Content, string? errorMessage)> GetImageFromBlob(string blobName,
         CancellationToken cancellationToken)
     {

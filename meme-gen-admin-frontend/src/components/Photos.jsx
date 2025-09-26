@@ -210,7 +210,7 @@ export default function Photos({ selectedPerson, onCallToast, onCallCreateTempla
                             : (
                                 <>
                                     <ContextMenu model={menuModel} ref={cm} onHide={() => onSelectPhoto(null)} />
-                                    <DataTable className='mt-4' scrollable scrollHeight="350px" virtualScrollerOptions={{ itemSize: 46 }} value={photos} paginator rows={5} rowsPerPageOptions={[5, 10, 25, 50]}
+                                    <DataTable className='mt-4' scrollable scrollHeight="400px" virtualScrollerOptions={{ itemSize: 46 }} value={photos} paginator rows={5} rowsPerPageOptions={[5, 10, 25, 50]}
                                         paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
                                         currentPageReportTemplate="{first} to {last} of {totalRecords}"
                                         selectionMode="single" selection={selectedPhoto}

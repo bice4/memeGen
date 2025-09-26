@@ -3,6 +3,11 @@
 MemeGen is a distributed application for meme generation and management.  
 It combines multiple .NET microservices, React-based frontends, and shared infrastructure into a single solution orchestrated with [ASP.NET Aspire](https://learn.microsoft.com/en-us/dotnet/aspire/).
 
+## Disclaimer
+
+⚠️ **This solution is created solely for learning and experimental purposes with .NET Aspire.**  
+It is **not intended for production use** and comes with **no guarantees or warranties**.  
+Use at your own risk.
 ---
 
 ## 📂 Project Structure

@@ -1,5 +1,4 @@
 ﻿using MemeGen.Contracts.Messaging.V1.Requests;
-using MemeGen.Domain.Entities;
 using MemeGen.Domain.Entities.Configuration;
 
 namespace MemeGen.ClientApiService.Translators;

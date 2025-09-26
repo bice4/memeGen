@@ -14,6 +14,15 @@ public record ImageGenerationConfigurationShortDto(
 
 public record ImageCachingConfigurationShortDto(int CacheDurationInMinutes, int ImageRetentionInMinutes);
 
+/// <summary>
+/// Information needed to update an existing template.
+/// </summary>
+/// <param name="TemplateId"><see cref="string"/> id of the template to update</param>
+/// <param name="Name"><see cref="string"/> name of the template</param>
+/// <param name="TemplateQuotes"> quotes currently associated with the template</param>
+/// <param name="QuotesToAdd"> quotes available to add to the template</param>
+/// <param name="PhotoTitle"> title of the associated photo</param>
+/// <param name="PhotoBase64"> Base64 encoded content of the associated photo</param>
 public record TemplateUpdateInformation(
     string TemplateId,
     string Name,
@@ -22,4 +31,10 @@ public record TemplateUpdateInformation(
     string PhotoTitle,
     string PhotoBase64);
 
+/// <summary>
+/// Information needed to create a new template.
+/// </summary>
+/// <param name="Quotes"> quotes available to add to the new template</param>
+/// <param name="PhotoTitle"> title of the associated photo</param>
+/// <param name="PhotoBase64"> Base64 encoded content of the associated photo</param>
 public record TemplateCreateInformation(IEnumerable<QuoteShortDto> Quotes, string PhotoTitle, string PhotoBase64);
