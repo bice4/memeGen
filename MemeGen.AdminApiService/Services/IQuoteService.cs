@@ -76,7 +76,7 @@ public class QuoteService(ILogger<QuoteService> logger, AppDbContext appDbContex
         var personExists =
             await appDbContext.Persons.AnyAsync(p => p.Id == personId, cancellationToken: cancellationToken);
         if (!personExists)
-            throw new NotFoundException("Person", personId);
+            throw new NotFoundException("Person", personId.ToString());
 
         var quote = new QuoteItem(quoteContent, personId);
         await appDbContext.Quotes.AddAsync(quote, cancellationToken);
@@ -102,7 +102,7 @@ public class QuoteService(ILogger<QuoteService> logger, AppDbContext appDbContex
     public async Task<QuoteItem> GetByIdAsync(int quoteId, CancellationToken cancellationToken)
     {
         var quote = await appDbContext.Quotes.FirstOrDefaultAsync(x => x.Id == quoteId, cancellationToken);
-        return quote ?? throw new NotFoundException("Quote", quoteId);
+        return quote ?? throw new NotFoundException("Quote", quoteId.ToString());
     }
 
     /// <inheritdoc />
@@ -118,28 +118,29 @@ public class QuoteService(ILogger<QuoteService> logger, AppDbContext appDbContex
     {
         var personExists =
             await appDbContext.Persons.AnyAsync(p => p.Id == personId, cancellationToken: cancellationToken);
-        
+
         if (!personExists)
-            throw new NotFoundException("Person", personId);
+            throw new NotFoundException("Person", personId.ToString());
 
         using var reader = new StreamReader(stream);
-        var quotes = new List<QuoteItem>();
+        var quotes = new HashSet<string>();
+
         while (!reader.EndOfStream)
         {
             var line = await reader.ReadLineAsync(cancellationToken);
             if (string.IsNullOrWhiteSpace(line)) continue;
 
-            if (quotes.Any(x => x.Quote == line))
+            // Skip duplicate quotes in the same file
+            if (quotes.Contains(line))
                 continue;
 
-            var quote = new QuoteItem(line, personId);
-            quotes.Add(quote);
+            quotes.Add(line);
         }
 
         if (quotes.Count == 0)
-            throw new InvalidDataException("File is empty");
+            throw new InvalidDataException("File with quotes is empty");
 
-        await appDbContext.Quotes.AddRangeAsync(quotes, cancellationToken);
+        await appDbContext.Quotes.AddRangeAsync(quotes.Select(x => new QuoteItem(x, personId)), cancellationToken);
         await appDbContext.SaveChangesAsync(cancellationToken);
     }
 }

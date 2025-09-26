@@ -94,12 +94,12 @@ public class TemplateService(
             await appDbContext.Persons.AnyAsync(p => p.Id == createTemplateRequest.PersonId,
                 cancellationToken: cancellationToken);
         if (!personExists)
-            throw new NotFoundException("Person", createTemplateRequest.PersonId);
+            throw new NotFoundException("Person", createTemplateRequest.PersonId.ToString());
 
         var photo = await appDbContext.Photos.FirstOrDefaultAsync(x => x.Id == createTemplateRequest.PhotoId,
             cancellationToken);
         if (photo == null)
-            throw new NotFoundException("Photo", createTemplateRequest.PhotoId);
+            throw new NotFoundException("Photo", createTemplateRequest.PhotoId.ToString());
 
         if (createTemplateRequest.Quotes.Count == 0)
             throw new InvalidDataException("Quotes cannot be empty");
@@ -122,7 +122,7 @@ public class TemplateService(
 
         var template = await templateRepository.GetByIdAsync(objectId, cancellationToken);
         if (template == null)
-            throw new NotFoundException("Template", 0);
+            throw new NotFoundException("Template", updateTemplateRequest.Id);
 
         template.Update(updateTemplateRequest.Name, updateTemplateRequest.Quotes);
 

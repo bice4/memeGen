@@ -198,7 +198,7 @@ export default function Quotes({ selectedPerson, onCallToast }) {
                         ? renderSkeleton()
                         : (<>
                             <ContextMenu model={menuModel} ref={cm} onHide={() => setSelectedQuote(null)} />
-                            <DataTable className='mt-4' scrollable scrollHeight="350px" virtualScrollerOptions={{ itemSize: 46 }} value={quotes} paginator rows={5} rowsPerPageOptions={[5, 10, 25, 50]}
+                            <DataTable className='mt-4' scrollable scrollHeight="400px" virtualScrollerOptions={{ itemSize: 46 }} value={quotes} paginator rows={5} rowsPerPageOptions={[5, 10, 25, 50]}
                                 paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
                                 currentPageReportTemplate="{first} to {last} of {totalRecords}"
                                 onContextMenu={(e) => cm.current.show(e.originalEvent)} contextMenuSelection={selectedQuote} onContextMenuSelectionChange={(e) => setSelectedQuote(e.value)} >

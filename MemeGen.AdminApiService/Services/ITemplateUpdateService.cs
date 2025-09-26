@@ -13,6 +13,7 @@ namespace MemeGen.ApiService.Services;
 
 /// <summary>
 /// Service for retrieving information needed to create or update templates.
+/// This service exists only to reduce the BE calls needed by the Admin UI when creating or updating templates.
 /// </summary>
 public interface ITemplateUpdateService
 {
@@ -48,14 +49,16 @@ public class TemplateUpdateService(
     public async Task<TemplateUpdateInformation> GetUpdateInformationAsync(string templateId,
         CancellationToken cancellationToken)
     {
+        // Validate the template ID format
         if (!ObjectId.TryParse(templateId, out var objectId))
             throw new InvalidDataException("Invalid template ID format");
 
+        // Retrieve the template from the repository
         var template = await templateRepository.GetByIdAsync(objectId, cancellationToken);
-
         if (template == null)
-            throw new NotFoundException("Template", 0);
+            throw new NotFoundException("Template", templateId);
 
+        // Retrieve all quotes associated with the person, excluding those already in the template
         var templateQuotes = template.Quotes ?? [];
         var allQuotes = await appDbContext.Quotes.Where(x => x.PersonId == template.PersonId)
             .ToListAsync(cancellationToken: cancellationToken);
@@ -65,6 +68,8 @@ public class TemplateUpdateService(
             allQuotes.RemoveAll(x => x.Quote == quoteItem);
         }
 
+        // Not great, but we need the index for the DTO and React needs a stable key, so a simple foreach will do.
+        // If performance becomes an issue, we can optimize this later.
         var templateQuotesDtos = new List<QuoteShortDto>();
         var i = 1;
 
@@ -87,21 +92,26 @@ public class TemplateUpdateService(
     public async Task<TemplateCreateInformation> GetCreateInformationAsync(int photoId, int personId,
         CancellationToken cancellationToken)
     {
+        // Check if the associated person exists
         var personExists =
             await appDbContext.Persons.AnyAsync(p => p.Id == personId,
                 cancellationToken: cancellationToken);
         if (!personExists)
-            throw new NotFoundException("Person", personId);
+            throw new NotFoundException("Person", personId.ToString());
 
+        // Check if the associated photo exists
         var photo = await appDbContext.Photos.FirstOrDefaultAsync(x => x.Id == photoId,
             cancellationToken);
         if (photo == null)
-            throw new NotFoundException("Photo", photoId);
+            throw new NotFoundException("Photo", photoId.ToString());
 
+        // Retrieve all quotes associated with the person
         var quotes = await appDbContext.Quotes
             .Where(x => x.PersonId == personId)
             .ToListAsync(cancellationToken);
 
+        // Get the base64 representation of the photo from Azure Blob Storage
+        // If the blob does not exist or has no content, appropriate exceptions will be thrown
         var base64Image = await GetBlobImageBase64(photo.BlobFileName, cancellationToken);
 
         return new TemplateCreateInformation(quotes.Select(x => x.ToShortDto()), photo.Title, base64Image);

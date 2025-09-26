@@ -2,7 +2,7 @@
 
 public class NotFoundException : DomainException
 {
-    public NotFoundException(string entityName, int? entityId)
+    public NotFoundException(string entityName, string? entityId)
     {
         EntityName = entityName;
         EntityId = entityId;
@@ -10,7 +10,7 @@ public class NotFoundException : DomainException
     }
 
     private string EntityName { get; }
-    private int? EntityId { get; }
+    private string? EntityId { get; }
 
-    public override string ToResponseMessage() => $"{EntityName} with id: {EntityId ?? 0} not found";
+    public override string ToResponseMessage() => $"{EntityName} with id: {EntityId} not found";
 }

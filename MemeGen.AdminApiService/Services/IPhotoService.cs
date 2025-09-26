@@ -71,12 +71,12 @@ public class PhotoService(
     {
         var existingPhoto = appDbContext.Photos.FirstOrDefault(p => p.Title == title);
         if (existingPhoto != null)
-            throw new AlreadyExistsException("Photo", existingPhoto.Id);
+            throw new AlreadyExistsException("Photo", existingPhoto.Id.ToString());
 
         var personExists =
             await appDbContext.Persons.AnyAsync(p => p.Id == personId, cancellationToken: cancellationToken);
         if (!personExists)
-            throw new NotFoundException("Person", personId);
+            throw new NotFoundException("Person", personId.ToString());
 
 
         var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
@@ -114,7 +114,7 @@ public class PhotoService(
     {
         var photo = await appDbContext.Photos.FirstOrDefaultAsync(x => x.Id == photoId, cancellationToken);
         if (photo == null)
-            throw new NotFoundException("Photo", photoId);
+            throw new NotFoundException("Photo", photoId.ToString());
 
         var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
         var blob = blobContainerClient.GetBlobClient(photo.BlobFileName);
@@ -146,14 +146,14 @@ public class PhotoService(
         var photo = await appDbContext.Photos.FirstOrDefaultAsync(x => x.Id == photoId, cancellationToken);
 
         if (photo == null)
-            throw new NotFoundException("Photo", photoId);
+            throw new NotFoundException("Photo", photoId.ToString());
 
         var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
         var blob = blobContainerClient.GetBlobClient(photo.BlobFileName);
 
         var blobContent = await blob.DownloadContentAsync(cancellationToken);
         if (!blobContent.HasValue)
-            throw new NotFoundException("Photo", photoId);
+            throw new NotFoundException("Photo", photoId.ToString());
 
         var contentBinary = blobContent.Value.Content;
         return Convert.ToBase64String(contentBinary);

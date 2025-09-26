@@ -54,7 +54,7 @@ public class ImageService(
         // Check if a person has templates
         var personTemplates = await templateRepository.GetByPersonIdAsync(personId, cancellationToken);
         if (personTemplates == null || personTemplates.Count == 0)
-            throw new NotFoundException("Template", personId);
+            throw new NotFoundException("Template for the person", personId.ToString());
 
         // Create correlationId will be used for polling and link between services
         var correlationId = Guid.NewGuid().ToString("N");
@@ -69,7 +69,7 @@ public class ImageService(
                 ImageGenerationConfiguration.DefaultRowKey, cancellationToken);
 
         if (imageGenerationConfiguration == null)
-            throw new NotFoundException("Configuration", 0);
+            throw new NotFoundException("Configuration", ImageGenerationConfiguration.DefaultRowKey);
 
         // Check Redis cache for existing image with the same template, quote, and configuration
         // If found, return the cached image
