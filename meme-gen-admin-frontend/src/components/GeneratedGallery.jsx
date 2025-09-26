@@ -44,7 +44,7 @@ export default function GeneratedGallery({ selectedPerson, onCallToast }) {
             {isLoading ?
                 (<ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" fill="var(--surface-ground)" animationDuration=".5s" />)
                 : images.length === 0
-                    ? (<div>No generated images found</div>)
+                    ? (<div>No generated memes found</div>)
                     : (<Galleria value={images} numVisible={5} style={{ width: 'w-5' }}
                         item={itemTemplate} showThumbnails={false} showIndicators showItemNavigators circular />)}
         </div>

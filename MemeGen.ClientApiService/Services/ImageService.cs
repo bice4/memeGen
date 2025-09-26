@@ -1,8 +1,7 @@
 ﻿using System.Text.Json;
-using Azure.Storage.Blobs;
+using MemeGen.AzureBlobServices;
 using MemeGen.ClientApiService.Models;
 using MemeGen.ClientApiService.Translators;
-using MemeGen.Common.Constants;
 using MemeGen.Common.Exceptions;
 using MemeGen.ConfigurationService;
 using MemeGen.Contracts.Messaging.V1;
@@ -45,7 +44,7 @@ public class ImageService(
     IImageGenerationRepository imageGenerationRepository,
     IImageCache imageCache,
     IConnection rmqConnection,
-    BlobServiceClient blobServiceClient,
+    IAzureBlobService azureBlobService,
     IConfigurationService configurationService) : IImageService
 {
     /// <inheritdoc/>
@@ -63,13 +62,14 @@ public class ImageService(
         var (randomTemplate, randomQuote) = imageCache.GetRandomTemplateAndQuote(personTemplates);
 
         // Get image generation configuration
-        // If configuration is missing, throw an exception
         var imageGenerationConfiguration =
             await configurationService.GetConfigurationAsync<ImageGenerationConfiguration>(
                 ImageGenerationConfiguration.DefaultRowKey, cancellationToken);
 
+        // If configuration is missing, use default configuration
         if (imageGenerationConfiguration == null)
-            throw new NotFoundException("Configuration", ImageGenerationConfiguration.DefaultRowKey);
+            imageGenerationConfiguration = ImageGenerationConfiguration.CreateDefault(AzureTablesConstants
+                .DefaultPartitionKey);
 
         // Check Redis cache for existing image with the same template, quote, and configuration
         // If found, return the cached image
@@ -164,34 +164,19 @@ public class ImageService(
         if (imageCachingConfiguration != null)
             expiration = TimeSpan.FromMinutes(imageCachingConfiguration.CacheDurationInMinutes);
 
-        await imageCache.AddImageToRedisCache(
-            [imageGeneration.TemplateId, imageGeneration.Quote, imageGeneration.ConfigurationThumbprint],
-            imageGeneration.BlobFileName, expiration);
+        await imageCache.AddImageToRedisCache(imageGeneration, expiration);
 
         return new ImageGenerationResult(ImageGenerationStatus.Completed, correlationId,
             imageGeneration.AdditionalMessage, blobResult.base64Content);
     }
-    
+
     private async Task<(string? base64Content, string? errorMessage)> GetImageFromBlob(string blobName,
         CancellationToken cancellationToken)
     {
-        // Check if a blob file exists
-        var blobClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName)
-            .GetBlobClient(blobName);
+        var base64 = await azureBlobService.GetContentInBase64Async(blobName, cancellationToken);
 
-        var blobExists = await blobClient.ExistsAsync(cancellationToken);
-        if (!blobExists)
-            return (null!, "Blob not found");
-
-        // Check if blob content is valid and exists
-        var blobContent = await blobClient.DownloadContentAsync(cancellationToken);
-        if (!blobContent.HasValue)
-            return (null!, "Fail to download image");
-
-        // Convert to Base64
-        var contentBinary = blobContent.Value.Content;
-        var base64 = Convert.ToBase64String(contentBinary);
-
-        return (base64, null!);
+        return string.IsNullOrWhiteSpace(base64)
+            ? (null!, "Blob not found or empty content")
+            : (base64, null!);
     }
 }

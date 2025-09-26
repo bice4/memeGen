@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-using MemeGen.Common.Constants;
+using MemeGen.AzureBlobServices;
 using MemeGen.Contracts.Messaging.V1.Requests;
 using MemeGen.Domain.Entities;
 using MemeGen.MongoDbService.Repositories;
@@ -27,7 +25,7 @@ public interface IImageProcessor
 public class ImageProcessor(
     ILogger<ImageProcessor> logger,
     ITemplateRepository templateRepository,
-    BlobServiceClient blobServiceClient,
+    IAzureBlobService azureBlobService,
     IImageGenerationRepository imageGenerationRepository) : IImageProcessor
 {
     /// <inheritdoc/>
@@ -41,7 +39,7 @@ public class ImageProcessor(
         // Get image generation entry
         var imageGeneration =
             await imageGenerationRepository.GetByCorrelationIdAsync(request.CorrelationId, cancellationToken);
-        
+
         if (imageGeneration == null)
         {
             stopwatch.Stop();
@@ -73,13 +71,11 @@ public class ImageProcessor(
         try
         {
             // Download image from blob storage
-            var blobContainerClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
-            var blob = blobContainerClient.GetBlobClient(template.PhotoBlobFileName);
+            var blobContent =
+                await azureBlobService.GetContentAsBinaryDataAsync(template.PhotoBlobFileName, cancellationToken);
 
-            var blobContent = await blob.DownloadContentAsync(cancellationToken);
-            
             // If blob content is null, fail the image generation
-            if (!blobContent.HasValue)
+            if (blobContent == null)
             {
                 stopwatch.Stop();
                 await FailImageProcessing(imageGeneration, "Image not found at blob", cancellationToken);
@@ -88,23 +84,15 @@ public class ImageProcessor(
 
             // Save blob content to temp file
             // Draw text on image
-            var contentBinary = blobContent.Value.Content;
-            await File.WriteAllBytesAsync(tempFileName, contentBinary, cancellationToken);
+            await File.WriteAllBytesAsync(tempFileName, blobContent, cancellationToken);
             await ImageTextDrawer.DrawTextOnImage(request.RandomQuote, tempFileName, request.ImageProcessingConfig);
 
-            // Upload the processed image back to blob storage
-            // Use correlation id as blob name
-            // Set content type to image/jpeg
+            // Upload the processed image back to blob storage with the correlation id as the blob name 
+            // and content type as image/jpeg
             // Update image generation entry with blob name and status completed
             // If any of these steps fail, update image generation entry with status failed and error message
             var blobName = request.CorrelationId;
-            var blobClient = blobContainerClient.GetBlobClient(blobName);
-
-            await blobClient.UploadAsync(tempFileName, cancellationToken);
-            await blobClient.SetHttpHeadersAsync(new BlobHttpHeaders
-            {
-                ContentType = "image/jpeg"
-            }, cancellationToken: cancellationToken);
+            await azureBlobService.UploadContentFromFileAsync(blobName, tempFileName, "image/jpeg", cancellationToken);
 
             stopwatch.Stop();
             await CompleteImageProcessing(imageGeneration, blobName, $"Elapsed: {stopwatch.ElapsedMilliseconds} ms",

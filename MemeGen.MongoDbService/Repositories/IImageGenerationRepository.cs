@@ -13,7 +13,7 @@ public interface IImageGenerationRepository
 
     Task DeleteAsync(ImageGeneration imageGeneration, CancellationToken cancellationToken);
     
-    Task<List<string?>> GetByPersonIdAsync(int personId, CancellationToken cancellationToken);
+    Task<List<string?>> GetBlobNamesByPersonIdAsync(int personId, CancellationToken cancellationToken);
     
     Task UpdateAsync(ImageGeneration imageGeneration, CancellationToken cancellationToken);
 }
@@ -44,7 +44,7 @@ public class ImageGenerationRepository(IMongoClient client) : IImageGenerationRe
         return collection.DeleteOneAsync(x => x.Id == imageGeneration.Id, cancellationToken);
     }
     
-    public async Task<List<string?>> GetByPersonIdAsync(int personId, CancellationToken cancellationToken)
+    public async Task<List<string?>> GetBlobNamesByPersonIdAsync(int personId, CancellationToken cancellationToken)
     {
         var collection = GetCollection();
         var all = await collection.Find(x => x.Status == ImageGenerationStatus.Completed && x.PersonId == personId)
