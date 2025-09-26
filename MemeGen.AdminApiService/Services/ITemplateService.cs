@@ -74,7 +74,7 @@ public interface ITemplateService
     /// <param name="personId">><see cref="int"/> id of the associated person</param>
     /// <param name="cancellationToken">><see cref="CancellationToken"/></param>
     /// <returns>list of Base64 encoded <see cref="string"/> image contents</returns>
-    Task<List<string>> GetAllImageContentAsync(int personId, CancellationToken cancellationToken);
+    Task<List<string>> GetAllPhotoContentAsync(int personId, CancellationToken cancellationToken);
 }
 
 /// <inheritdoc cref="ITemplateService"/>
@@ -151,7 +151,7 @@ public class TemplateService(
         => templateRepository.GetByIdAsync(id, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<List<string>> GetAllImageContentAsync(int personId, CancellationToken cancellationToken)
+    public async Task<List<string>> GetAllPhotoContentAsync(int personId, CancellationToken cancellationToken)
     {
         var allResults = await imageGenerationRepository.GetBlobNamesByPersonIdAsync(personId, cancellationToken);
         var notNullResults = allResults.Where(x => x != null).ToList();

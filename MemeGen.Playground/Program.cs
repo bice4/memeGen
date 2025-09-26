@@ -5,25 +5,23 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-class Program
+namespace MemeGen.Playground;
+
+/// <summary>
+/// Playground program for testing image processing and text rendering.
+/// </summary>
+internal abstract class Program
 {
-    static Dictionary<string, (int length, float width, float fontSize)> _quotesCache = new();
-    private static Dictionary<int, float> _fsCache = new();
+    private static readonly string[] TestQuotes =
+    [
+        "test",
+        "This is a test",
+        "This is a longer test quote",
+        "This is a much longer test quote that should wrap around to multiple lines and be quite",
+        " long indeed"
+    ];
 
-    static readonly string[] TestQuotes = new[]
-    {
-        "За бутылку пива",
-        "Ой бляяя",
-        "Мне по&&й",
-        "Не начинай",
-        "Из коробки",
-        "Полтора реквеста",
-        "Мелкий бля",
-        "Я вас не звал",
-        "За три сторипоинта"
-    };
-
-    static void Main(string[] args)
+    private static void Main(string[] args)
     {
         Directory.CreateDirectory("output");
         Directory.CreateDirectory("input");

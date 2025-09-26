@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import './App.css';
 import Persons from './Persons';
 import ImageResult from './ImageResult';
-import { tr } from 'framer-motion/client';
 
 function App() {
   const [persons, setPersons] = useState([]);
@@ -100,24 +99,24 @@ function App() {
     if (pollingInProcess) {
       return (<div className="flex align-items-center justify-content-center h-screen">
         <div className="text-center p-4 border-round shadow-2 surface-card">
-          <div className="text-2xl mb-4">✨ Генерация идёт...</div>
+          <div className="text-2xl mb-4">✨ Generation in progress...</div>
           <div>
             <div className="text-lg font-bold text-primary bounce">
-              Подбрасываем пиксели 🎲
+              🎲 Tossing pixels 🎲
             </div>
           </div>
           <div>
             <div className="text-lg font-bold text-primary pulse mb-3">
-              Смешиваем буквы 🔤
+              🔤 Mixing letters 🔤
             </div>
           </div>
           <div>
             <div className="text-lg font-bold text-primary flash">
-              Добавляем магии ✨
+              ✨ Adding magic ✨
             </div>
           </div>
           <div className="mt-4 font-mono text-xl text-500">
-            Генерация
+            🚀 Generating
             <span className="pulse">.</span>
             <span className="pulse pulse-delay-200">.</span>
             <span className="pulse pulse-delay-400">.</span>
@@ -132,7 +131,7 @@ function App() {
       return (
         <div className='flex align-items-center justify-content-center h-screen'>
           <div className=''>
-            <div className='text-5xl'>🚀 Генерация в пути!</div>
+            <div className='text-5xl'>🚀 Generation on the way!</div>
             <div className='flex align-items-center justify-content-center'>
               <pre style={{ fontFamily: "monospace" }}>
                 {`     |
@@ -145,12 +144,12 @@ function App() {
  /|##!##|\\
 / |##!##| \\
    (o o) 
-   ( - )   < "Взлетаем!"
+   ( - )   < "Lift off!"
    (   )
     \`-\'`}
               </pre>
             </div>
-            <div className='text-3xl text-center'>Ещё чуть-чуть и готово ✨</div>
+            <div className='text-3xl text-center'>✨ Almost ready!</div>
           </div>
         </div>
       );

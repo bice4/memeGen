@@ -39,7 +39,7 @@ public interface IPhotoService
     /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
     /// <returns>base64 encoded <see cref="string"/> content of the photo</returns>
     /// <exception cref="NotFoundException">thrown if the photo does not exist</exception>
-    Task<string> GetPhotoItemContentBase64Async(int photoId, CancellationToken cancellationToken);
+    Task<string> GetPhotoContentByIdInBase64Async(int photoId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Retrieves all photo entries from the database.
@@ -133,7 +133,7 @@ public class PhotoService(
     }
 
     /// <inheritdoc />
-    public async Task<string> GetPhotoItemContentBase64Async(int photoId, CancellationToken cancellationToken)
+    public async Task<string> GetPhotoContentByIdInBase64Async(int photoId, CancellationToken cancellationToken)
     {
         var photo = await appDbContext.Photos.FirstOrDefaultAsync(x => x.Id == photoId, cancellationToken);
         if (photo == null)
