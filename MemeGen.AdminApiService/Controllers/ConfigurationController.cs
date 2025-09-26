@@ -8,16 +8,22 @@ namespace MemeGen.ApiService.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class ConfigurationController(IConfigurationService service) : ControllerBase
+public class ConfigurationController(ILogger<ConfigurationController> logger, IConfigurationService service)
+    : ControllerBase
 {
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Get(int id, CancellationToken cancellationToken)
     {
         try
         {
+            // Very bad practice, but this is a demo app after all
             if (id <= 0)
-                return BadRequest("Invalid configuration type");
+            {
+                logger.LogError("Invalid configuration type requested: {Id}", id);
+                return BadRequest("Invalid configuration type requested");
+            }
 
+            // I'm not proud of this code, but it's a demo app after all
             switch (id)
             {
                 case 2:
@@ -71,7 +77,8 @@ public class ConfigurationController(IConfigurationService service) : Controller
                 return NotFound("Configuration not found");
             }
 
-            configuration.Update(request.TextPadding, request.BackgroundOpacity, request.TextAtTop, request.UseUpperText);
+            configuration.Update(request.TextPadding, request.BackgroundOpacity, request.TextAtTop,
+                request.UseUpperText);
             await service.UpdateConfigurationAsync(ImageGenerationConfiguration.DefaultRowKey, configuration,
                 cancellationToken);
             return Ok();

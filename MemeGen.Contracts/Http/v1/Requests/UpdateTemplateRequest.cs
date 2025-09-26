@@ -7,6 +7,7 @@ public class UpdateTemplateRequest(
     string name,
     List<string> quotes)
 {
+    [Required(ErrorMessage = "Id is required")]
     public string Id { get; set; } = id;
 
     [Required(ErrorMessage = "Name is required")]

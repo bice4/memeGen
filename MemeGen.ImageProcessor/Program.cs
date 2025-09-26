@@ -6,7 +6,7 @@ using MemeGen.ServiceDefaults;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.AddMongoDbServices();
-builder.Services.AddHostedService<ImageProcessingWorker>();
+builder.Services.AddHostedService<ImageProcessorWorker>();
 builder.Services.AddSingleton<IImageProcessor, ImageProcessor>();
 
 builder.AddServiceDefaults();

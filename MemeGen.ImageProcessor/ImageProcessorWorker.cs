@@ -7,7 +7,9 @@ using RabbitMQ.Client.Events;
 
 namespace MemeGen.ImageProcessor;
 
-public class ImageProcessingWorker(ILogger<ImageProcessingWorker> logger, IConnection connection,
+public class ImageProcessorWorker(
+    ILogger<ImageProcessorWorker> logger,
+    IConnection connection,
     IImageProcessor imageProcessor) : BackgroundService
 {
     private IModel? _channel;
@@ -18,8 +20,7 @@ public class ImageProcessingWorker(ILogger<ImageProcessingWorker> logger, IConne
         _channel.QueueDeclare(MessagingContractConstants.ContentProcessingQueueName, durable: true, exclusive: false,
             autoDelete: false);
 
-        logger.LogInformation("Image processing requests processing starting... ");
-
+        logger.LogInformation("ImageProcessor started and waiting for messages.");
         return base.StartAsync(cancellationToken);
     }
 
@@ -30,10 +31,10 @@ public class ImageProcessingWorker(ILogger<ImageProcessingWorker> logger, IConne
         {
             logger.LogInformation("Received image processing request");
             var message = JsonSerializer.Deserialize<ImageProcessingRequest>(ea.Body.Span);
-            
+
             if (message == null)
             {
-                logger.LogWarning("Received message is null.");
+                logger.LogWarning("Received message is null. Skipping processing.");
                 return;
             }
 
@@ -43,13 +44,14 @@ public class ImageProcessingWorker(ILogger<ImageProcessingWorker> logger, IConne
             }
             catch (Exception e)
             {
-                logger.LogError(e, "Error processing image processing request");
+                logger.LogError(e, "Error processing image processing request. See exception for details.");
             }
-            
+
             logger.LogInformation("Image processing request processed.");
         };
 
-        _channel?.BasicConsume(queue: MessagingContractConstants.ContentProcessingQueueName, autoAck: true, consumer: consumer);
+        _channel?.BasicConsume(queue: MessagingContractConstants.ContentProcessingQueueName, autoAck: true,
+            consumer: consumer);
 
         return Task.CompletedTask;
     }
@@ -59,7 +61,7 @@ public class ImageProcessingWorker(ILogger<ImageProcessingWorker> logger, IConne
         _channel?.Close();
         connection.Close();
 
-        logger.LogInformation("Image processing stopped.");
+        logger.LogInformation("ImageProcessor stopped.");
 
         return base.StopAsync(cancellationToken);
     }

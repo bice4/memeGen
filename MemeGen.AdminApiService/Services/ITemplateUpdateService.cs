@@ -4,7 +4,6 @@ using MemeGen.ApiService.Translators;
 using MemeGen.Common.Constants;
 using MemeGen.Common.Exceptions;
 using MemeGen.Contracts.Http.v1.Models;
-using MemeGen.Domain.Entities;
 using MemeGen.MongoDbService.Repositories;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
@@ -12,20 +11,40 @@ using InvalidDataException = System.IO.InvalidDataException;
 
 namespace MemeGen.ApiService.Services;
 
+/// <summary>
+/// Service for retrieving information needed to create or update templates.
+/// </summary>
 public interface ITemplateUpdateService
 {
+    /// <summary>
+    /// Gets the information needed to update an existing template.
+    /// </summary>
+    /// <param name="templateId"><see cref="string"/> id of the template to update</param>
+    /// <param name="cancellationToken">><see cref="CancellationToken"/></param>
+    /// <exception cref="NotFoundException"> thrown if the template does not exist</exception>
+    /// <exception cref="InvalidDataException"> thrown if the template ID format is invalid</exception>
+    /// <returns><see cref="TemplateUpdateInformation"/> containing template details and available quotes</returns>
     Task<TemplateUpdateInformation> GetUpdateInformationAsync(string templateId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Gets the information needed to create a new template.
+    /// </summary>
+    /// <param name="photoId"><see cref="int"/> id of the associated photo</param>
+    /// <param name="personId"><see cref="int"/> id of the associated person</param>
+    /// <param name="cancellationToken">><see cref="CancellationToken"/></param>
+    /// <exception cref="NotFoundException"> thrown if the associated person or photo does not exist</exception>
+    /// <returns><see cref="TemplateCreateInformation"/> containing available quotes and photo details</returns>
     Task<TemplateCreateInformation> GetCreateInformationAsync(int photoId, int personId,
         CancellationToken cancellationToken);
 }
 
+/// <inheritdoc/>
 public class TemplateUpdateService(
-    ILogger<TemplateUpdateService> logger,
     ITemplateRepository templateRepository,
     AppDbContext appDbContext,
     BlobServiceClient blobServiceClient) : ITemplateUpdateService
 {
+    /// <inheritdoc />
     public async Task<TemplateUpdateInformation> GetUpdateInformationAsync(string templateId,
         CancellationToken cancellationToken)
     {
@@ -48,7 +67,7 @@ public class TemplateUpdateService(
 
         var templateQuotesDtos = new List<QuoteShortDto>();
         var i = 1;
-        
+
         foreach (var quote in templateQuotes)
         {
             templateQuotesDtos.Add(new QuoteShortDto(quote, i));
@@ -64,7 +83,7 @@ public class TemplateUpdateService(
             base64Image);
     }
 
-
+    /// <inheritdoc />
     public async Task<TemplateCreateInformation> GetCreateInformationAsync(int photoId, int personId,
         CancellationToken cancellationToken)
     {
@@ -94,11 +113,11 @@ public class TemplateUpdateService(
         var blobClient = blobContainerClient.GetBlobClient(blobName);
         var exists = await blobClient.ExistsAsync(cancellationToken);
         if (!exists)
-            throw new NotFoundException("Template image blob", 0);
+            throw new BlobNotFoundException(blobName);
 
         var blobContent = await blobClient.DownloadContentAsync(cancellationToken);
         if (!blobContent.HasValue)
-            throw new NotFoundException("Template image blob", 0);
+            throw new BlobHasNoContentException(blobName);
 
         var contentBinary = blobContent.Value.Content;
         var base64Image = Convert.ToBase64String(contentBinary);

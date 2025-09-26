@@ -9,7 +9,20 @@ public enum ImageGenerationStatus
     Failed = 2
 }
 
-public class ImageGeneration(string correlationId, string quote, string templateId, string configurationThumbprint, int personId)
+/// <summary>
+/// Entity representing an image generation. Contains details about the generation request, its status, and associated metadata.
+/// </summary>
+/// <param name="correlationId">for tracking the request. Used as a unique identifier.</param>
+/// <param name="quote">the quote to be used in the image</param>
+/// <param name="templateId">the template to be used in the image</param>
+/// <param name="configurationThumbprint">the thumbprint of the configuration used for generation</param>
+/// <param name="personId">id of the associated person</param>
+public class ImageGeneration(
+    string correlationId,
+    string quote,
+    string templateId,
+    string configurationThumbprint,
+    int personId)
 {
     public ObjectId Id { get; private set; } = ObjectId.GenerateNewId();
 
@@ -28,7 +41,7 @@ public class ImageGeneration(string correlationId, string quote, string template
     public DateTimeOffset UpdatedAt { get; private set; } = DateTimeOffset.Now;
 
     public string ConfigurationThumbprint { get; private set; } = configurationThumbprint;
-    
+
     public int PersonId { get; private set; } = personId;
 
     public void Update(ImageGenerationStatus status, string? additionalMessage, string? blobFileName = null)

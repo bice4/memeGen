@@ -156,7 +156,7 @@ public class TemplateController(
     }
     
     [HttpPatch]
-    public async Task<IActionResult> Create([FromBody] UpdateTemplateRequest request,
+    public async Task<IActionResult> Update([FromBody] UpdateTemplateRequest request,
         CancellationToken cancellationToken)
     {
         try
