@@ -154,17 +154,14 @@ public class ImageService(
 
         // Cache the image in Redis
         // Get image caching configuration for cache duration
-        // If configuration is missing, use default cache duration of 120 minutes
+        // If configuration is missing, create a default configuration with default cache duration
         var imageCachingConfiguration =
             await configurationService.GetConfigurationAsync<ImageCachingConfiguration>(
-                ImageCachingConfiguration.DefaultRowKey, cancellationToken);
+                ImageCachingConfiguration.DefaultRowKey, cancellationToken) ??
+            ImageCachingConfiguration.CreateDefault(ImageCachingConfiguration.DefaultRowKey);
 
-        TimeSpan? expiration = null;
-
-        if (imageCachingConfiguration != null)
-            expiration = TimeSpan.FromMinutes(imageCachingConfiguration.CacheDurationInMinutes);
-
-        await imageCache.AddImageToRedisCache(imageGeneration, expiration);
+        await imageCache.AddImageToRedisCache(imageGeneration,
+            TimeSpan.FromMinutes(imageCachingConfiguration.CacheDurationInMinutes));
 
         return new ImageGenerationResult(ImageGenerationStatus.Completed, correlationId,
             imageGeneration.AdditionalMessage, blobResult.base64Content);

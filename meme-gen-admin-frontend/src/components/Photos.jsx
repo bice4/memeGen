@@ -82,8 +82,7 @@ export default function Photos({ selectedPerson, onCallToast, onCallCreateTempla
         } else {
             console.error("Error:", response.status);
             onCallToast(1, 'Failed to add photo');
-            setNewPhotoTitle('');
-            setNewPhotoBase64('');
+            onTemplateClear();
         }
     }
 
