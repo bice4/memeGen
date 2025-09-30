@@ -17,15 +17,27 @@ public interface IAzureBlobService
         CancellationToken cancellationToken);
 }
 
-public class AzureBlobService(ILogger<AzureBlobService> logger, BlobServiceClient blobServiceClient) : IAzureBlobService
+public class AzureBlobService : IAzureBlobService
 {
+    private readonly ILogger<AzureBlobService> _logger;
+    private readonly BlobServiceClient _blobServiceClient;
+
+    public AzureBlobService(ILogger<AzureBlobService> logger, BlobServiceClient blobServiceClient)
+    {
+        _logger = logger;
+        _blobServiceClient = blobServiceClient;
+
+        var containerClient = _blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName);
+        containerClient.CreateIfNotExists();
+    }
+
     public Task DeleteIfExistsAsync(string blobName, CancellationToken cancellationToken)
     {
-        var blobClient = blobServiceClient
+        var blobClient = _blobServiceClient
             .GetBlobContainerClient(AzureBlobConstants.PhotoContainerName)
             .GetBlobClient(blobName);
 
-        logger.LogInformation("Deleting blob {BlobName}.", blobName);
+        _logger.LogInformation("Deleting blob {BlobName}.", blobName);
 
         return blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
     }
@@ -33,18 +45,18 @@ public class AzureBlobService(ILogger<AzureBlobService> logger, BlobServiceClien
     public Task UploadContentInBase64Async(string blobName, string base64Content, CancellationToken cancellationToken)
     {
         var contentBytes = Convert.FromBase64String(base64Content);
-        var blobClient = blobServiceClient
+        var blobClient = _blobServiceClient
             .GetBlobContainerClient(AzureBlobConstants.PhotoContainerName)
             .GetBlobClient(blobName);
 
-        logger.LogInformation("Uploading data to blob {BlobName}, size {Size}bytes.", blobName, contentBytes.Length);
+        _logger.LogInformation("Uploading data to blob {BlobName}, size {Size}bytes.", blobName, contentBytes.Length);
 
         return blobClient.UploadAsync(new BinaryData(contentBytes), cancellationToken);
     }
 
     public async Task<string?> GetContentInBase64Async(string blobName, CancellationToken cancellationToken)
     {
-        var blobClient = blobServiceClient
+        var blobClient = _blobServiceClient
             .GetBlobContainerClient(AzureBlobConstants.PhotoContainerName)
             .GetBlobClient(blobName);
 
@@ -58,7 +70,7 @@ public class AzureBlobService(ILogger<AzureBlobService> logger, BlobServiceClien
 
     public async Task<BinaryData?> GetContentAsBinaryDataAsync(string blobName, CancellationToken cancellationToken)
     {
-        var blobClient = blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName)
+        var blobClient = _blobServiceClient.GetBlobContainerClient(AzureBlobConstants.PhotoContainerName)
             .GetBlobClient(blobName);
 
         var response = await blobClient.DownloadContentAsync(cancellationToken);
@@ -68,11 +80,11 @@ public class AzureBlobService(ILogger<AzureBlobService> logger, BlobServiceClien
     public Task UploadContentFromFileAsync(string blobName, string filePath, string contentType,
         CancellationToken cancellationToken)
     {
-        var blobClient = blobServiceClient
+        var blobClient = _blobServiceClient
             .GetBlobContainerClient(AzureBlobConstants.PhotoContainerName)
             .GetBlobClient(blobName);
 
-        logger.LogInformation("Uploading file {FilePath} to blob {BlobName}.", filePath, blobName);
+        _logger.LogInformation("Uploading file {FilePath} to blob {BlobName}.", filePath, blobName);
 
         return blobClient.UploadAsync(filePath, new Azure.Storage.Blobs.Models.BlobHttpHeaders
         {
